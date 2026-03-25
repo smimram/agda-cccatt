@@ -6,6 +6,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+    - name: Update Ubuntu
+      run: |
+        sudo sed -i 's/noble/resolute/g' /etc/apt/sources.list.d/ubuntu.sources
+        sudo apt-get -y update
     - name: Install required packages
       run: sudo apt-get -y install agda
     - name: Build
