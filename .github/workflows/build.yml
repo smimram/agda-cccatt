@@ -12,6 +12,11 @@ jobs:
         sudo apt-get -y update
     - name: Install required packages
       run: sudo apt-get -y install agda
+    - name: Setup Agda
+      run: |
+        mkdir -p ~/.agda
+        echo "/usr/share/agda-stdlib/standard-library.agda-lib" > ~/.agda/libraries
+        echo "standard-library" > ~/.agda/defaults
     - name: Build
       run: make
     - name: Build site
