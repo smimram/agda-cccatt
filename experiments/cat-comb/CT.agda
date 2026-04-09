@@ -65,8 +65,14 @@ _[_] {τ = τ} {Γ = Γ} (coh {A = A} ps τ' σ') σ = coh ps (τ' ∘' τ) (σ'
 --- Deriving basic operations
 ---
 
--- I : {n : ℕ} {Γ : Con n} {A : Ty n} → Tm Γ (A ⇒ A)
--- I {n} {Γ} {A} = coh PS⊢X⇒X (SubTy1 A) tt
+id : {n : ℕ} {Γ : Con n} {A : Ty n} → Tm Γ (A , A)
+id {n} {Γ} {A} = coh PS⊢X⇒X (SubTy1 A) tt
+
+comp : {n : ℕ} {Γ : Con n} {A B C : Ty n} → Tm Γ (A , B) → Tm Γ (B , C) → Tm Γ (A , C)
+comp {A = A} {B} {C} f g = coh PSX⇒Y,Y⇒Z⊢X⇒Z (SubTy3 A B C) ((tt , f) , g)
+
+term : {n : ℕ} {Γ : Con n} {A : Ty n} → Tm Γ (A , 𝟙)
+term = coh PS⊢X⇒1 (SubTy1 _) tt
 
 -- K : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A ⇒ B ⇒ A)
 -- K {n} {Γ} {A} {B} = coh PS⊢X⇒Y⇒X (SubTy2 A B) tt

@@ -41,6 +41,13 @@ FSub∘ {Γ'' = Γ'' ▹ A} (σ' , t') σ = Σ-≡,≡→≡ (FSub∘ σ' σ , s
 --- From CC to CT
 
 G : {n : ℕ} {Γ : Con n} {A : Arr n} → CC.Tm Γ A → CT.Tm Γ A
+G (CC.var x) = CT.var x
+G CC.id = CT.id
+G (f CC.· g) = CT.comp (G f) (G g)
+G CC.term = CT.term
+G (CC.pair f g) = {!!}
+G CC.cfst = {!!}
+G CC.csnd = {!!}
 -- G {n} {Γ} (CC.var x) = CT.var x
 -- G {n} {Γ} CC.I = CT.I
 -- G {n} {Γ} CC.K = CT.K

@@ -10,7 +10,7 @@ data Ty (n : ℕ) : Type where
   X   : Fin n → Ty n
   𝟙   : Ty n
   _×_ : (A B : Ty n) → Ty n
-  _⇒_ : (A B : Ty n) → Ty n
+  -- _⇒_ : (A B : Ty n) → Ty n
 
 -- An arrow
 Arr : ℕ → Type
@@ -25,13 +25,13 @@ _[_]' : {n : ℕ} {n' : ℕ} → Ty n' → SubTy n n' → Ty n
 X x [ σ ]' = lookup σ x
 𝟙 [ τ ]' = 𝟙
 (A × B) [ τ ]' = A [ τ ]' × B [ τ ]'
-(A ⇒ B) [ τ ]' = A [ τ ]' ⇒ B [ τ ]'
+-- (A ⇒ B) [ τ ]' = A [ τ ]' ⇒ B [ τ ]'
 
 WkTy : {n : ℕ} → Ty n → Ty (suc n)
 WkTy (X x) = X (suc x)
 WkTy 𝟙 = 𝟙
 WkTy (A × B) = WkTy A × WkTy B
-WkTy (A ⇒ B) = WkTy A ⇒ WkTy B
+-- WkTy (A ⇒ B) = WkTy A ⇒ WkTy B
 
 SubTyWk : {n n' : ℕ} → SubTy n n' → SubTy (suc n) n'
 SubTyWk τ = map WkTy τ
@@ -58,7 +58,7 @@ SubTyIdEq {n} {A = X x} = lookup-id x
   lookup-wk (suc x) = lookup-map-weaken {σ = SubTyWk (SubTyId _)} x (lookup-id (suc x))
 SubTyIdEq {A = 𝟙} = refl
 SubTyIdEq {A = A × B} = cong₂ _×_ SubTyIdEq SubTyIdEq
-SubTyIdEq {A = A ⇒ B} = cong₂ _⇒_ SubTyIdEq SubTyIdEq
+-- SubTyIdEq {A = A ⇒ B} = cong₂ _⇒_ SubTyIdEq SubTyIdEq
 
 {-# REWRITE SubTyIdEq #-}
 
@@ -89,7 +89,7 @@ SubTyUnitL {n} {n'} τ = {!!} -- standard material
 [∘'] {n} {n'} {n''} {A = X (suc x)} {τ} {τ' = A ∷ τ'} = [∘'] {A = X x} {τ = τ} {τ' = τ'}
 [∘'] {A = 𝟙} = refl
 [∘'] {A = A × B} = cong₂ _×_ ([∘'] {A = A}) ([∘'] {A = B})
-[∘'] {A = A ⇒ B} = cong₂ _⇒_ ([∘'] {A = A}) ([∘'] {A = B})
+-- [∘'] {A = A ⇒ B} = cong₂ _⇒_ ([∘'] {A = A}) ([∘'] {A = B})
 
 {-# REWRITE [∘'] #-}
 {-# REWRITE SubTyUnitL #-}
@@ -109,7 +109,10 @@ data _∈_ {n : ℕ} (A : Arr n) : Con n → Set where
 postulate
   -- TODO: we do not formalize pasting schemes for now and simply assume that the necessary types are pasting
   PS : {n : ℕ} (Γ : Con n) (A : Arr n) → Set
-  -- PS⊢X⇒X : PS {n = 1} ε (X (# 0) ⇒ X (# 0))
+  PS⊢X⇒X : PS {n = 1} ε (X (# 0) , X (# 0))
+  PSX⇒Y,Y⇒Z⊢X⇒Z : PS {n = 3} (ε ▹ ((X (# 0)) , (X (# 1))) ▹ (X (# 1) , X (# 2))) (X (# 0) , X (# 2))
+  PS⊢X⇒1 : PS {n = 1} ε (X (# 0) , 𝟙)
+
   -- PS⊢X⇒Y⇒X : PS {n = 2} ε (X (# 0) ⇒ X (# 1) ⇒ X (# 0))
   -- PS⊢[X⇒Y⇒Z]⇒[X⇒Y]⇒X⇒Z : PS {n = 3} ε ((X (# 0) ⇒ X (# 1) ⇒ X (# 2)) ⇒ (X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 2))
   -- PSX⊢X : PS {n = 1} (ε ▹ X (# 0)) (X (# 0))
