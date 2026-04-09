@@ -108,7 +108,7 @@ data _∈_ {n : ℕ} (A : Arr n) : Con n → Set where
 
 postulate
   -- TODO: we do not formalize pasting schemes for now and simply assume that the necessary types are pasting
-  PS : {n : ℕ} (Γ : Con n) (A : Ty n) → Set
+  PS : {n : ℕ} (Γ : Con n) (A : Arr n) → Set
   -- PS⊢X⇒X : PS {n = 1} ε (X (# 0) ⇒ X (# 0))
   -- PS⊢X⇒Y⇒X : PS {n = 2} ε (X (# 0) ⇒ X (# 1) ⇒ X (# 0))
   -- PS⊢[X⇒Y⇒Z]⇒[X⇒Y]⇒X⇒Z : PS {n = 3} ε ((X (# 0) ⇒ X (# 1) ⇒ X (# 2)) ⇒ (X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 2))
