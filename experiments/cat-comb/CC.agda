@@ -13,18 +13,18 @@ data Tm {n : ℕ} (Γ : Con n) : Arr n → Type where
   _·_ : {A B C : Ty n} → Tm Γ (A , B) → Tm Γ (B , C) → Tm Γ (A , C)
   term : {A : Ty n} → Tm Γ (A , 𝟙)
   pair : {X A B : Ty n} → Tm Γ (X , A) → Tm Γ (X , B) → Tm Γ (X , A × B)
-  cfst : {A B : Ty n} → Tm Γ (A × B , A)
-  csnd : {A B : Ty n} → Tm Γ (A × B , B)
+  fst : {A B : Ty n} → Tm Γ (A × B , A)
+  snd : {A B : Ty n} → Tm Γ (A × B , B)
 
 infix 5 _∼_
 
 data _∼_ {n : ℕ} {Γ : Con n} : {A : Arr n} → Tm Γ A → Tm Γ A → Type where
-  pfst : {X A B : Ty n} (f : Tm Γ (X , A)) (g : Tm Γ (X , B)) → pair f g · cfst ∼ f
-  psnd : {X A B : Ty n} (f : Tm Γ (X , A)) (g : Tm Γ (X , B)) → pair f g · csnd ∼ g
+  pfst : {X A B : Ty n} (f : Tm Γ (X , A)) (g : Tm Γ (X , B)) → pair f g · fst ∼ f
+  psnd : {X A B : Ty n} (f : Tm Γ (X , A)) (g : Tm Γ (X , B)) → pair f g · snd ∼ g
   pnat : {A' A B C : Ty n} (f : Tm Γ (A' , A)) (g : Tm Γ (A , B)) (h : Tm Γ (A , C)) → f · pair g h ∼ pair (f · g) (f · h)
   -- NOTE: both pext are equivalent in presence of naturality
-  -- pext : {X A B : Ty n} (f : Tm Γ (X , A × B)) → pair (f · cfst) (f · csnd) ∼ f
-  pext : {A B : Ty n} → pair cfst csnd ∼ id {A = A × B}
+  -- pext : {X A B : Ty n} (f : Tm Γ (X , A × B)) → pair (f · fst) (f · snd) ∼ f
+  pext : {A B : Ty n} → pair fst snd ∼ id {A = A × B}
   text : {A : Ty n} (f : Tm Γ (A , 𝟙)) → f ∼ term
   unitl : {A B : Ty n} (f : Tm Γ (A , B)) → id · f ∼ f
   unitr : {A B : Ty n} (f : Tm Γ (A , B)) → f · id ∼ f
@@ -57,8 +57,8 @@ id [ σ ] = id
 (f · g) [ σ ] = f [ σ ] · g [ σ ]
 term [ σ ] = term
 pair f g [ σ ] = pair (f [ σ ]) (g [ σ ])
-cfst [ σ ] = cfst
-csnd [ σ ] = csnd
+fst [ σ ] = fst
+snd [ σ ] = snd
 
 -- Equivalence of substitutions
 _∼Sub_ : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {τ : SubTy n n'} (σ σ' : Sub τ Γ Γ') → Type
@@ -93,8 +93,8 @@ assoc f g h [ q ]∼ = ∼trans (assoc (f [ _ ]) (g [ _ ]) (h [ _ ])) (∼· (�
   lem (f · g) p = ∼· (∼refl {f = f} [ p ]∼) (∼refl {f = g} [ p ]∼)
   lem term p = ∼refl
   lem (pair f g) p = ∼pair (∼refl {f = f} [ p ]∼) (∼refl {f = g} [ p ]∼)
-  lem cfst p = ∼refl
-  lem csnd p = ∼refl
+  lem fst p = ∼refl
+  lem snd p = ∼refl
 ∼sym p [ q ]∼ = ∼sym (p [ ∼SubSym q ]∼)
 ∼trans p p' [ q ]∼ = ∼trans (p [ q ]∼) (p' [ ∼SubRefl _ ]∼)
 
@@ -111,5 +111,5 @@ _∘_ {Γ'' = Γ'' ▹ A} (σ' , t') σ = (σ' ∘ σ) , (t' [ σ ])
 [∘] (f · g) σ' σ = cong₂ _·_ ([∘] f σ' σ) ([∘] g σ' σ)
 [∘] term σ' σ = refl
 [∘] (pair f g) σ' σ = cong₂ pair ([∘] f σ' σ) ([∘] g σ' σ)
-[∘] cfst σ' σ = refl
-[∘] csnd σ' σ = refl
+[∘] fst σ' σ = refl
+[∘] snd σ' σ = refl

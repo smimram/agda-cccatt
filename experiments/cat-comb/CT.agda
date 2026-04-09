@@ -74,11 +74,11 @@ comp {A = A} {B} {C} f g = coh PSX⇒Y,Y⇒Z⊢X⇒Z (SubTy3 A B C) ((tt , f) , 
 term : {n : ℕ} {Γ : Con n} {A : Ty n} → Tm Γ (A , 𝟙)
 term = coh PS⊢X⇒1 (SubTy1 _) tt
 
-pfst : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A × B , A)
-pfst = coh PS⊢X×Y⇒X (SubTy2 _ _) tt
+fst : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A × B , A)
+fst = coh PS⊢X×Y⇒X (SubTy2 _ _) tt
 
-psnd : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A × B , B)
-psnd = coh PS⊢X×Y⇒Y (SubTy2 _ _) tt
+snd : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A × B , B)
+snd = coh PS⊢X×Y⇒Y (SubTy2 _ _) tt
 
 -- K : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A ⇒ B ⇒ A)
 -- K {n} {Γ} {A} {B} = coh PS⊢X⇒Y⇒X (SubTy2 A B) tt
@@ -158,8 +158,8 @@ _∼Sub_ {Γ = Γ} {Γ' = Γ' ▹ A} (σ , t) (σ' , t') = (_∼Sub_ {Γ = Γ} �
 ∼SubSym {Γ' = Γ' ▹ A} (p , q) = ∼SubSym p , ∼sym q
 
 _[_]∼ : {n n' : ℕ} {τ : SubTy n n'} {Γ : Con n} {Γ' : Con n'} {A : Arr n'} (t : Tm Γ' A) {σ σ' : Sub τ Γ Γ'} → σ ∼Sub σ' → t [ σ ] ∼ t [ σ' ]
-var here [ p ]∼ = snd p
-var (drop x) [ p ]∼ = (var x) [ fst p ]∼
+var here [ p , q ]∼ = q
+var (drop x) [ p , q ]∼ = (var x) [ p ]∼
 coh ps τ σ [ p ]∼ = {!!} -- equivalent substitutions are closed under left composition
 
 -- apI : {n : ℕ} {Γ : Con n} {A : Ty n} (t : Tm Γ A) → ap I t ∼ t

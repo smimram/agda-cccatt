@@ -46,13 +46,8 @@ G CC.id = CT.id
 G (f CC.· g) = CT.comp (G f) (G g)
 G CC.term = CT.term
 G (CC.pair f g) = {!!}
-G CC.cfst = CT.pfst
-G CC.csnd = {!CT.psnd!}
--- G {n} {Γ} (CC.var x) = CT.var x
--- G {n} {Γ} CC.I = CT.I
--- G {n} {Γ} CC.K = CT.K
--- G {n} {Γ} CC.S = CT.S
--- G (t CC.$ u) = CT.ap (G t) (G u)
+G CC.fst = CT.fst
+G CC.snd = CT.snd
 
 G∼ : {n : ℕ} {Γ : Con n} {A : Arr n} {t u : CC.Tm Γ A} → t CC.∼ u → G t CT.∼ G u
 -- G∼ (CC.Iβ t) = CT.apI (G t)
