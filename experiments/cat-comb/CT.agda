@@ -74,6 +74,12 @@ comp {A = A} {B} {C} f g = coh PSX⇒Y,Y⇒Z⊢X⇒Z (SubTy3 A B C) ((tt , f) , 
 term : {n : ℕ} {Γ : Con n} {A : Ty n} → Tm Γ (A , 𝟙)
 term = coh PS⊢X⇒1 (SubTy1 _) tt
 
+pfst : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A × B , A)
+pfst = coh PS⊢X×Y⇒X (SubTy2 _ _) tt
+
+psnd : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A × B , B)
+psnd = coh PS⊢X×Y⇒Y (SubTy2 _ _) tt
+
 -- K : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A ⇒ B ⇒ A)
 -- K {n} {Γ} {A} {B} = coh PS⊢X⇒Y⇒X (SubTy2 A B) tt
 
