@@ -3,7 +3,7 @@ open import Prelude
 {-# BUILTIN REWRITE _≡_ #-}
 
 infixr 6 _×_
-infixr 5 _⇒_
+-- infixr 5 _⇒_
 
 -- Types
 data Ty (n : ℕ) : Type where
@@ -114,6 +114,7 @@ postulate
   PS⊢X⇒1 : PS {n = 1} ε (X (# 0) , 𝟙)
   PS⊢X×Y⇒X : PS {n = 2} ε ((X (# 0) × X (# 1)) , X (# 0))
   PS⊢X×Y⇒Y : PS {n = 2} ε ((X (# 0) × X (# 1)) , X (# 1))
+  PSX⇒Y,X⇒Z⊢X⇒Y×Z : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 0) , X (# 2))) (X (# 0) , X (# 1) × X (# 2))
 
   -- PS⊢X⇒Y⇒X : PS {n = 2} ε (X (# 0) ⇒ X (# 1) ⇒ X (# 0))
   -- PS⊢[X⇒Y⇒Z]⇒[X⇒Y]⇒X⇒Z : PS {n = 3} ε ((X (# 0) ⇒ X (# 1) ⇒ X (# 2)) ⇒ (X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 2))

@@ -45,11 +45,12 @@ G (CC.var x) = CT.var x
 G CC.id = CT.id
 G (f CC.· g) = CT.comp (G f) (G g)
 G CC.term = CT.term
-G (CC.pair f g) = {!!}
+G (CC.pair f g) = CT.pair (G f) (G g)
 G CC.fst = CT.fst
 G CC.snd = CT.snd
 
 G∼ : {n : ℕ} {Γ : Con n} {A : Arr n} {t u : CC.Tm Γ A} → t CC.∼ u → G t CT.∼ G u
+G∼ t = {!!}
 -- G∼ (CC.Iβ t) = CT.apI (G t)
 -- G∼ (CC.Kβ t u) = CT.apK (G t) (G u)
 -- G∼ (CC.Sβ t u v) = CT.apS (G t) (G u) (G v)

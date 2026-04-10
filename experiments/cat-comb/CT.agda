@@ -80,6 +80,9 @@ fst = coh PS⊢X×Y⇒X (SubTy2 _ _) tt
 snd : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A × B , B)
 snd = coh PS⊢X×Y⇒Y (SubTy2 _ _) tt
 
+pair : {n : ℕ} {Γ : Con n} {X A B : Ty n} → Tm Γ (X , A) → Tm Γ (X , B) → Tm Γ (X , A × B)
+pair f g = coh PSX⇒Y,X⇒Z⊢X⇒Y×Z (SubTy3 _ _ _) ((tt , f) , g)
+
 -- K : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A ⇒ B ⇒ A)
 -- K {n} {Γ} {A} {B} = coh PS⊢X⇒Y⇒X (SubTy2 A B) tt
 
