@@ -53,16 +53,16 @@ G∼ : {n : ℕ} {Γ : Con n} {A : Arr n} {t u : CC.Tm Γ A} → t CC.∼ u → 
 G∼ (CC.pfst f g) = CT.pfst (G f) (G g)
 G∼ (CC.psnd f g) = CT.psnd (G f) (G g)
 G∼ (CC.pnat f g h) = {!!}
-G∼ CC.pext = {!!}
+G∼ CC.pext = CT.pext
 G∼ (CC.text f) = {!!}
 G∼ (CC.unitl f) = CT.unitl (G f)
 G∼ (CC.unitr f) = CT.unitr (G f)
 G∼ (CC.assoc f g h) = {!!}
 G∼ (CC.∼· f g) = {!!}
-G∼ (CC.∼pair t t₁) = {!!}
+G∼ (CC.∼pair f g) = {!!}
 G∼ CC.∼refl = CT.∼refl (G _)
 G∼ (CC.∼sym p) = CT.∼sym (G∼ p)
-G∼ (CC.∼trans p q) = {!!}
+G∼ (CC.∼trans p q) = CT.∼trans (G∼ p) (G∼ q)
 
 GSub : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {τ : SubTy n n'} → CC.Sub τ Γ Γ' → CT.Sub τ Γ Γ'
 GSub {Γ' = ε} σ = tt

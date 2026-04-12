@@ -128,11 +128,6 @@ eqs' ps t τ p = eq ps t t τ p
 ∼sym (eq ps t u τ p) = eq ps u t τ (∼SubSym p)
 ∼sym (∼trans p q) = ∼trans (∼sym q) (∼sym p)
 
--- ∼trans : {n : ℕ} {Γ : Con n} {A : Ty n} {t u v : Tm Γ A} → t ∼ u → u ∼ v → t ∼ v
--- ∼trans (eqv x) q = q
--- ∼trans (eq ps t u τ p) q = {!!}
-  -- -- basically, if q is (eqv x), we are as above, and if q is eq then we can use the same eq ps for both => NO!
-
 _∼Sub_ {Γ' = ε} σ σ' = Unit
 _∼Sub_ {Γ = Γ} {Γ' = Γ' ▹ A} (σ , t) (σ' , t') = (_∼Sub_ {Γ = Γ} σ σ') ∧ t ∼ t'
 
@@ -169,44 +164,8 @@ pfst f g = eqs PSX⇒Y,X⇒Z⊢X⇒Y (pair (var (drop here)) (var here) · fst) 
 psnd : {n : ℕ} {Γ : Con n} {X A B : Ty n} (f : Tm Γ (X , A)) (g : Tm Γ (X , B)) → pair f g · snd ∼ g
 psnd f g = eqs PSX⇒Y,X⇒Z⊢X⇒Z (pair (var (drop here)) (var here) · snd) (var here) (SubTy3 _ _ _) ((tt , f) , g)
 
--- apI : {n : ℕ} {Γ : Con n} {A : Ty n} (t : Tm Γ A) → ap I t ∼ t
--- apI {n} {Γ} {A} t = eqs PSX⊢X (ap I (var here)) (var here) τ σ
-  -- where
-  -- τ : SubTy n 1
-  -- τ = SubTy1 A
-  -- Γ' : Con 1
-  -- Γ' = ε ▹ X zero
-  -- σ : Sub τ Γ Γ'
-  -- σ = tt , t
+pext : {n : ℕ} {Γ : Con n} {A B : Ty n} → pair fst snd ∼ id {Γ = Γ} {A = A × B}
+pext = eqs PS⊢X×Y⇒X×Y (pair fst snd) id (SubTy2 _ _) tt
 
--- apK : {n : ℕ} {Γ : Con n} {A B : Ty n} (t : Tm Γ A) (u : Tm Γ B) → ap (ap K t) u ∼ t
--- apK {n} {Γ} {A} {B} t u = eqs PSX,Y⊢X (ap (ap K x) y) x (SubTy2 A B) ((tt , t) , u)
-  -- where
-  -- x = var (drop here)
-  -- y = var here
-
--- apS : {n : ℕ} {Γ : Con n} {A B C : Ty n} (t : Tm Γ (A ⇒ B ⇒ C)) (u : Tm Γ (A ⇒ B)) (v : Tm Γ A) → ap3 S t u v ∼ ap2 t v (ap u v)
--- apS {n} {Γ} {A} {B} {C} t u v = eqs PSX⇒Y⇒Z,X⇒Y,X⊢Z (ap3 S x y z) (ap2 x z (ap y z)) (SubTy3 A B C) (((tt , t) , u) , v)
-  -- where
-  -- x = var (drop (drop here))
-  -- y = var (drop here)
-  -- z = var here
-
--- lamIβ : {n : ℕ} {Γ : Con n} {A B : Ty n} → _∼_ {Γ = Γ} {A = (A ⇒ B) ⇒ (A ⇒ B)} (ap S (ap K I)) I
--- lamIβ {n} {Γ} {A} {B} = eqs PS⊢[X⇒Y]⇒X⇒Y (ap S (ap K I)) I (SubTy2 A B) tt
-
--- lamKβ : {n : ℕ} {Γ : Con n} {A B C : Ty n} → _∼_ {Γ = Γ} {A = (A ⇒ C) ⇒ (A ⇒ B) ⇒ (A ⇒ C)} (ap2 S (ap K S) (ap S (ap K K))) K
--- lamKβ {n} {Γ} {A} {B} {C} = eqs PS⊢[X⇒Z]⇒[X⇒Y]⇒[X⇒Z] (ap2 S (ap K S) (ap S (ap K K))) K (SubTy3 A B C) tt
-
--- lamSβ : {n : ℕ} {Γ : Con n} {A B C D : Ty n} → _∼_ {Γ = Γ} {A = (A ⇒ B ⇒ C ⇒ D) ⇒ (A ⇒ B ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ D}
-        -- (ap2 S (ap K (ap S (ap K S))) (ap2 S (ap K S) (ap S (ap K S))))
-        -- (ap2 S (ap2 S (ap K S) (ap2 S (ap K K) (ap2 S (ap K S) (ap2 S (ap K (ap S (ap K S))) S)))) (ap K S))
--- lamSβ {n} {Γ} {A} {B} {C} {D} = eqs PS⊢[X⇒Y⇒Z⇒W]⇒[X⇒Y⇒Z]⇒[X⇒Y]⇒X⇒W (ap2 S (ap K (ap S (ap K S))) (ap2 S (ap K S) (ap S (ap K S)))) (ap2 S (ap2 S (ap K S) (ap2 S (ap K K) (ap2 S (ap K S) (ap2 S (ap K (ap S (ap K S))) S)))) (ap K S)) (SubTy4 A B C D) tt
-
--- lamwk : {n : ℕ} {Γ : Con n} {A B C : Ty n} → _∼_ {Γ = Γ} {A = (A ⇒ C) ⇒ A ⇒ B ⇒ C}
-        -- (ap2 S (ap2 S (ap K S) (ap2 S (ap K K) (ap2 S (ap K S) K))) (ap K K))
-        -- (ap S (ap K K))
--- lamwk {n} {Γ} {A} {B} {C} = eqs PS⊢[X⇒Z]⇒X⇒Y⇒Z (ap2 S (ap2 S (ap K S) (ap2 S (ap K K) (ap2 S (ap K S) K))) (ap K K)) (ap S (ap K K)) (SubTy3 A B C) tt
-
--- lamη : {n : ℕ} {Γ : Con n} {A B : Ty n} → _∼_ {Γ = Γ} {A = (A ⇒ B) ⇒ A ⇒ B} (ap2 S (ap2 S (ap K S) K) (ap K I)) I
--- lamη {n} {Γ} {A} {B} = eqs PS⊢[X⇒Y]⇒X⇒Y (ap2 S (ap2 S (ap K S) K) (ap K I)) I (SubTy2 A B) tt
+text : {n : ℕ} {Γ : Con n} {A : Ty n} (f : Tm Γ (A , 𝟙)) → f ∼ term
+text f = eqs PSX⇒1⊢X⇒1 (var here) term (SubTy1 _) (tt , f)
