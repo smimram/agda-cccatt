@@ -2,8 +2,7 @@ open import Agda.Primitive public using (Level) renaming (Set to Type ; lzero to
 open import Relation.Binary.PropositionalEquality hiding ([_]) public
 open ≡-Reasoning public
 open import Data.Nat public
-open import Data.Nat.Properties using (n<1+n) public
-open import Data.Fin using (Fin ; zero ; suc ; #_ ; fromℕ<) public
+open import Data.Fin using (Fin ; zero ; suc ; #_) public
 open import Data.Vec using (Vec ; [] ; _∷_ ; lookup ; map) public
 open import Data.Vec.Properties using (lookup-map) public
 open import Data.Unit hiding (_≟_) renaming (⊤ to Unit) public
