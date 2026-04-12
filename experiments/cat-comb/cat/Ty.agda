@@ -88,10 +88,6 @@ data _∈_ {n : ℕ} (A : Arr n) : Con n → Set where
   here : {Γ : Con n} → A ∈ (Γ ▹ A)
   drop : {Γ : Con n} {B : Arr n} → A ∈ Γ → A ∈ (Γ ▹ B)
 
-postulate
-  -- TODO: we do not formalize pasting schemes for now and simply assume that the necessary types are pasting
-  PS : {n : ℕ} (Γ : Con n) (A : Arr n) → Set
-
-  PS⊢X⇒X : PS {n = 1} ε (X (# 0) , X (# 0))
-  PSX⇒Y,Y⇒Z⊢X⇒Z : PS {n = 3} (ε ▹ ((X (# 0)) , (X (# 1))) ▹ (X (# 1) , X (# 2))) (X (# 0) , X (# 2))
-  -- PSX⇒Y⊢X⇒Y : PS {n = 2} (ε ▹ (X (# 0) , X (# 1))) (X (# 0) , X (# 1))
+WkCon : {n : ℕ} → Con n → Con (suc n)
+WkCon ε = ε
+WkCon (Γ ▹ (A , B)) = WkCon Γ ▹ (WkTy A , WkTy B)
