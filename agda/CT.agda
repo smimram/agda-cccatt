@@ -21,7 +21,7 @@ SubWk : {n n' : ℕ} {τ : SubTy n n'} {Γ : Con n} {Γ' : Con n'} (σ : Sub τ 
 Wk (var x) = var (drop x)
 Wk (coh ps τ σ) = coh ps τ (SubWk σ _)
 
-SubWk {Γ' = ε} σ A = tt
+SubWk {Γ' = ε} tt A = tt
 SubWk {Γ' = Γ' ▹ B} (σ , t) A = SubWk σ A , Wk t
 
 -- Identity substitution
