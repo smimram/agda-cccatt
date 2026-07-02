@@ -69,14 +69,14 @@ _∘'_ : {n n' n'' : ℕ} → SubTy n' n'' → SubTy n n' → SubTy n n''
 
 SubTyUnitL : {n n' : ℕ} (τ : SubTy n n') → SubTyId n' ∘' τ ≡ τ
 SubTyUnitL {n} {zero} [] = refl
-SubTyUnitL {n} {suc n'} (x ∷ τ) = cong (λ τ → x ∷ τ) (trans (lem τ) (SubTyUnitL τ))
+SubTyUnitL {n} {suc n'} (A ∷ τ) = cong (A ∷_) (trans (SubTyWk∘' (SubTyId n')) (SubTyUnitL τ))
   where
-  lem : {n' : ℕ} (τ : SubTy n n') → (SubTyWk (SubTyId n') ∘' (x ∷ τ)) ≡ (SubTyId n' ∘' τ)
-  lem [] = refl
-  lem {suc n'} (x ∷ τ) = cong (λ τ → x ∷ τ) (
-    map WkTy (SubTyWk (SubTyId n')) ∘' (_ ∷ x ∷ τ) ≡⟨ {!!} ⟩
-    SubTyWk (SubTyId n') ∘' (x ∷ τ) ∎
-    )
+  WkTy[]∷ : (B : Ty n') → WkTy B [ A ∷ τ ]' ≡ B [ τ ]'
+  WkTy[]∷ (X x) = refl
+  WkTy[]∷ (B ⇒ B') = cong₂ _⇒_ (WkTy[]∷ B) (WkTy[]∷ B')
+  SubTyWk∘' : {m : ℕ} (σ : SubTy n' m) → SubTyWk σ ∘' (A ∷ τ) ≡ σ ∘' τ
+  SubTyWk∘' [] = refl
+  SubTyWk∘' (B ∷ σ) = cong₂ _∷_ (WkTy[]∷ B) (SubTyWk∘' σ)
 
 -- Applying a substition is an action
 [∘'] : {n n' n'' : ℕ} {A : Ty n''} {τ : SubTy n n'} {τ' : SubTy n' n''} → (A [ τ' ]' [ τ ]') ≡ (A [ τ' ∘' τ ]')
