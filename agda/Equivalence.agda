@@ -82,8 +82,10 @@ GFSub : {n n' : ℕ} {τ : SubTy n n'} {Γ : Con n} {Γ' : Con n'} (σ : CT.Sub 
 GF (CT.var x) = CT.∼refl _
 GF (CT.coh ps τ σ) = CT.∼trans
   (CT.∼trans (CT.∼of≡ (sym (GSub≡ (CL.PSTm ps) (FSub σ)))) (G (CL.PSTm ps) CT.[ GFSub σ ]∼))
-  (CT.∼trans (CT.eqs ps (G (CL.PSTm ps)) (CT.coh ps (SubTyId _) (CT.SubId _)) τ σ)
-  (subst₂ CT._∼_ refl (cong (CT.coh ps τ) (CT.∘UnitL σ)) (CT.∼refl _)))
+  (CT.∼trans
+    (CT.eqs ps (G (CL.PSTm ps)) (CT.coh ps (SubTyId _) (CT.SubId _)) τ σ)
+    (subst₂ CT._∼_ refl (cong (CT.coh ps τ) (CT.∘UnitL σ)) (CT.∼refl _))
+  )
 
 GFSub {Γ' = ε} tt = tt
 GFSub {Γ' = Γ' ▹ A} (σ , t) = GFSub σ , GF t
