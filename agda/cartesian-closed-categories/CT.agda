@@ -105,6 +105,18 @@ ap2 t u v = ap (ap t u) v
 ap3 : {n : ℕ} {Γ : Con n} {A B C D : Ty n} → Tm Γ (A ⇒ B ⇒ C ⇒ D) → Tm Γ A → Tm Γ B → Tm Γ C → Tm Γ D
 ap3 t u v w = ap (ap2 t u v) w
 
+P₁ : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A × B ⇒ A)
+P₁ {n} {Γ} {A} {B} = coh PS⊢X×Y⇒X (SubTy2 A B) tt
+
+P₂ : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A × B ⇒ B)
+P₂ {n} {Γ} {A} {B} = coh PS⊢X×Y⇒Y (SubTy2 A B) tt
+
+P : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A ⇒ B ⇒ A × B)
+P {n} {Γ} {A} {B} = coh PS⊢X⇒Y⇒X×Y (SubTy2 A B) tt
+
+T : {n : ℕ} {Γ : Con n} → Tm Γ 𝟙
+T {n} {Γ} = coh PS⊢𝟙 [] tt
+
 ---
 --- Relations
 ---
@@ -226,3 +238,43 @@ lamwk {n} {Γ} {A} {B} {C} = eqs PS⊢[X⇒Z]⇒X⇒Y⇒Z (ap2 S (ap2 S (ap K S)
 
 lamη : {n : ℕ} {Γ : Con n} {A B : Ty n} → _∼_ {Γ = Γ} {A = (A ⇒ B) ⇒ A ⇒ B} (ap2 S (ap2 S (ap K S) K) (ap K I)) I
 lamη {n} {Γ} {A} {B} = eqs PS⊢[X⇒Y]⇒X⇒Y (ap2 S (ap2 S (ap K S) K) (ap K I)) I (SubTy2 A B) tt
+
+apP₁β : {n : ℕ} {Γ : Con n} {A B : Ty n} (t : Tm Γ A) (u : Tm Γ B) → ap P₁ (ap2 P t u) ∼ t
+apP₁β {n} {Γ} {A} {B} t u = eqs PSX,Y⊢X (ap P₁ (ap2 P x y)) x (SubTy2 A B) ((tt , t) , u)
+  where
+  x = var (drop here)
+  y = var here
+
+apP₂β : {n : ℕ} {Γ : Con n} {A B : Ty n} (t : Tm Γ A) (u : Tm Γ B) → ap P₂ (ap2 P t u) ∼ u
+apP₂β {n} {Γ} {A} {B} t u = eqs PSX,Y⊢Y (ap P₂ (ap2 P x y)) y (SubTy2 A B) ((tt , t) , u)
+  where
+  x = var (drop here)
+  y = var here
+
+Pη : {n : ℕ} {Γ : Con n} {A B : Ty n} (t : Tm Γ (A × B)) → t ∼ ap2 P (ap P₁ t) (ap P₂ t)
+Pη {n} {Γ} {A} {B} t = eqs PSX×Y⊢X×Y x (ap2 P (ap P₁ x) (ap P₂ x)) (SubTy2 A B) (tt , t)
+  where
+  x = var here
+
+Tη : {n : ℕ} {Γ : Con n} (t : Tm Γ 𝟙) → t ∼ T
+Tη {n} {Γ} t = eqs PS𝟙⊢𝟙 x T [] (tt , t)
+  where
+  x = var here
+
+lamP₁ : {n : ℕ} {Γ : Con n} {A B C : Ty n} → _∼_ {Γ = Γ} {A = (A ⇒ B) ⇒ (A ⇒ C) ⇒ A ⇒ B}
+        (ap2 S (ap K (ap S (ap K (ap S (ap K P₁))))) (ap2 S (ap K S) (ap S (ap K P))))
+        K
+lamP₁ {n} {Γ} {A} {B} {C} = eqs PS⊢[X⇒Y]⇒[X⇒Z]⇒X⇒Y (ap2 S (ap K (ap S (ap K (ap S (ap K P₁))))) (ap2 S (ap K S) (ap S (ap K P)))) K (SubTy3 A B C) tt
+
+lamP₂ : {n : ℕ} {Γ : Con n} {A B C : Ty n} → _∼_ {Γ = Γ} {A = (A ⇒ B) ⇒ (A ⇒ C) ⇒ A ⇒ C}
+        (ap2 S (ap K (ap S (ap K (ap S (ap K P₂))))) (ap2 S (ap K S) (ap S (ap K P))))
+        (ap K I)
+lamP₂ {n} {Γ} {A} {B} {C} = eqs PS⊢[X⇒Y]⇒[X⇒Z]⇒X⇒Z (ap2 S (ap K (ap S (ap K (ap S (ap K P₂))))) (ap2 S (ap K S) (ap S (ap K P)))) (ap K I) (SubTy3 A B C) tt
+
+lamP : {n : ℕ} {Γ : Con n} {A B C : Ty n} → _∼_ {Γ = Γ} {A = (A ⇒ B × C) ⇒ A ⇒ B × C}
+       (ap2 S (ap2 S (ap K S) (ap2 S (ap K (ap S (ap K P))) (ap S (ap K P₁)))) (ap S (ap K P₂)))
+       I
+lamP {n} {Γ} {A} {B} {C} = eqs PS⊢[X⇒Y×Z]⇒X⇒Y×Z (ap2 S (ap2 S (ap K S) (ap2 S (ap K (ap S (ap K P))) (ap S (ap K P₁)))) (ap S (ap K P₂))) I (SubTy3 A B C) tt
+
+lamT : {n : ℕ} {Γ : Con n} → _∼_ {Γ = Γ} {A = 𝟙 ⇒ 𝟙} (ap K T) I
+lamT {n} {Γ} = eqs PS⊢𝟙⇒𝟙 (ap K T) I [] tt

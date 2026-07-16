@@ -45,12 +45,24 @@ G {n} {Γ} (CL.var x) = CT.var x
 G {n} {Γ} CL.I = CT.I
 G {n} {Γ} CL.K = CT.K
 G {n} {Γ} CL.S = CT.S
+G {n} {Γ} CL.P₁ = CT.P₁
+G {n} {Γ} CL.P₂ = CT.P₂
+G {n} {Γ} CL.P = CT.P
+G {n} {Γ} CL.T = CT.T
 G (t CL.$ u) = CT.ap (G t) (G u)
 
 G∼ : {n : ℕ} {Γ : Con n} {A : Ty n} {t u : CL.Tm Γ A} → t CL.∼ u → G t CT.∼ G u
 G∼ (CL.Iβ t) = CT.apI (G t)
 G∼ (CL.Kβ t u) = CT.apK (G t) (G u)
 G∼ (CL.Sβ t u v) = CT.apS (G t) (G u) (G v)
+G∼ (CL.P₁β t u) = CT.apP₁β (G t) (G u)
+G∼ (CL.P₂β t u) = CT.apP₂β (G t) (G u)
+G∼ (CL.Pη t) = CT.Pη (G t)
+G∼ (CL.Tη t) = CT.Tη (G t)
+G∼ CL.lamP₁ = CT.lamP₁
+G∼ CL.lamP₂ = CT.lamP₂
+G∼ CL.lamP = CT.lamP
+G∼ CL.lamT = CT.lamT
 G∼ CL.lamIβ = CT.lamIβ
 G∼ CL.lamKβ = CT.lamKβ
 G∼ CL.lamSβ = CT.lamSβ
@@ -72,6 +84,10 @@ GSub≡ (CL.var (drop x)) (σ , t) = GSub≡ (CL.var x) σ
 GSub≡ CL.I σ = refl
 GSub≡ CL.K σ = refl
 GSub≡ CL.S σ = refl
+GSub≡ CL.P₁ σ = refl
+GSub≡ CL.P₂ σ = refl
+GSub≡ CL.P σ = refl
+GSub≡ CL.T σ = refl
 GSub≡ (t CL.$ u) σ = cong₂ CT.ap (GSub≡ t σ) (GSub≡ u σ)
 
 --- F and G are mutually inverse functions
@@ -95,4 +111,8 @@ FG (CL.var x) = CL.∼refl
 FG {Γ = Γ} CL.I = CL.PSEq PS⊢X⇒X (CL.PSTm PS⊢X⇒X) CL.I CL.[ CL.∼SubRefl {Γ = Γ} {τ = []} tt ]∼
 FG {Γ = Γ} CL.K = CL.PSEq PS⊢X⇒Y⇒X (CL.PSTm PS⊢X⇒Y⇒X) CL.K CL.[ CL.∼SubRefl {Γ = Γ} {τ = []} tt ]∼
 FG {Γ = Γ} CL.S = CL.PSEq PS⊢[X⇒Y⇒Z]⇒[X⇒Y]⇒X⇒Z (CL.PSTm PS⊢[X⇒Y⇒Z]⇒[X⇒Y]⇒X⇒Z) CL.S CL.[ CL.∼SubRefl {Γ = Γ} {τ = []} tt ]∼
+FG {Γ = Γ} CL.P₁ = CL.PSEq PS⊢X×Y⇒X (CL.PSTm PS⊢X×Y⇒X) CL.P₁ CL.[ CL.∼SubRefl {Γ = Γ} {τ = []} tt ]∼
+FG {Γ = Γ} CL.P₂ = CL.PSEq PS⊢X×Y⇒Y (CL.PSTm PS⊢X×Y⇒Y) CL.P₂ CL.[ CL.∼SubRefl {Γ = Γ} {τ = []} tt ]∼
+FG {Γ = Γ} CL.P = CL.PSEq PS⊢X⇒Y⇒X×Y (CL.PSTm PS⊢X⇒Y⇒X×Y) CL.P CL.[ CL.∼SubRefl {Γ = Γ} {τ = []} tt ]∼
+FG {Γ = Γ} CL.T = CL.PSEq PS⊢𝟙 (CL.PSTm PS⊢𝟙) CL.T CL.[ CL.∼SubRefl {Γ = Γ} {τ = []} tt ]∼
 FG (t CL.$ u) = CL.PSEq PSX⇒Y,X⊢Y (CL.PSTm PSX⇒Y,X⊢Y) (CL.var (drop here) CL.$ CL.var here) CL.[ (tt , FG t) , FG u ]∼
