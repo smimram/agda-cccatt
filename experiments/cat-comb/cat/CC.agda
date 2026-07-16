@@ -34,7 +34,41 @@ WkTmTm (f · g) = WkTmTm f · WkTmTm g
 
 PSTm : {n : ℕ} {Γ : Con n} {A : Arr n} → PS Γ A → Tm Γ A
 PSTm start = id
-PSTm (ext ps) = WkTmTm (WkTmTy (PSTm ps)) · var here
+PSTm (ext ps) = {!!} --  WkTmTm (WkTmTy (PSTm ps)) · var here
+
+hid : {n : ℕ} {Γ : Con n} {A B : Ty n} → A ≡ B → Tm Γ (A , B)
+hid refl = id
+
+≡→∼ : {n : ℕ} {Γ : Con n} {A : Arr n} {t u : Tm Γ A} → t ≡ u → t ∼ u
+≡→∼ refl = ∼refl
+
+-- -- Ty-in-empty-PS : (A : Ty 1) → A ≡ X (# 0)
+-- -- Ty-in-empty-PS (X zero) = refl
+
+Ty-in-empty-PS : {A B : Ty 1} → A ≡ B
+Ty-in-empty-PS {X zero} {X zero} = refl
+
+Ty-in-empty-PS-refl : {A : Ty 1} → Ty-in-empty-PS {A} {A} ≡ refl
+-- Ty-in-empty-PS-refl = UIP _ _
+Ty-in-empty-PS-refl {X zero} = refl
+
+-- Tm-in-empty-PS : {A B : Ty 1} (t : Tm ε (A , B)) → t ∼ hid Ty-in-empty-PS
+-- Tm-in-empty-PS id = ≡→∼ (sym (cong hid Ty-in-empty-PS-loop))
+-- Tm-in-empty-PS (t · u) = ∼trans {!!} (∼trans {!!} {!≡→∼ (sym (cong hid Ty-in-empty-PS-loop))!})
+
+Tm-in-empty-PS : {A B : Ty 1} (t : Tm ε (A , B)) → t ∼ hid Ty-in-empty-PS
+Tm-in-empty-PS {X zero} {X zero} id = ∼refl
+Tm-in-empty-PS {X zero} {X zero} (_·_ {B = X zero} t u) = ∼trans (∼· (Tm-in-empty-PS t) (Tm-in-empty-PS u)) (unitl id)
+
+data FW {n : ℕ} : (A : Arr n) → Type where
+  fw : {i j : Fin n} → i ≥Fin j → FW (X i , X j)
+
+lem-var : {n : ℕ} {Γ : Con n} {A B : Arr n} (ps : PS Γ A) → B ∈ Γ → FW B
+lem-var (ext ps) here = fw z≤n
+lem-var (ext ps) (drop k) = {!!}
+  where
+  bla : {!!}
+  bla = lem-var ps {!!}
 
 PSEq : {n : ℕ} {Γ : Con n} {A : Arr n} (ps : PS Γ A) (t u : Tm Γ A) → t ∼ u
 PSEq start id id = ∼refl
