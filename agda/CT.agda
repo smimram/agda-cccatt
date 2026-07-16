@@ -42,8 +42,8 @@ _[∣_∣_] t τ σ = t [ σ ]
 
 -- Composition of substitutions
 _∘_ : {n : ℕ} {Γ : Con n} {n' : ℕ} {Γ' : Con n'} {n'' : ℕ} {Γ'' : Con n''} {τ : SubTy n n'} {τ' : SubTy n' n''} →
-          Sub τ' Γ' Γ'' → Sub τ Γ Γ' → 
-          Sub (τ' ∘' τ) Γ Γ''
+      Sub τ' Γ' Γ'' → Sub τ Γ Γ' →
+      Sub (τ' ∘' τ) Γ Γ''
 _∘_ {Γ'' = ε} σ' σ = tt
 _∘_ {Γ'' = Γ'' ▹ A} (σ' , t) σ = σ' ∘ σ , t [ σ ]
 
@@ -63,10 +63,25 @@ _[_] {τ = τ} {Γ = Γ} (coh {A = A} ps τ' σ') σ = coh ps (τ' ∘' τ) (σ'
 ∘assoc {Γ''' = ε} tt σ' σ = refl
 ∘assoc {Γ''' = Γ''' ▹ A} (σ'' , t) σ' σ = cong₂ _,_ (∘assoc σ'' σ' σ) ([∘] t σ' σ)
 
+Wk[] : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {τ : SubTy n n'} {A B : Ty n'}
+       (u : Tm Γ' A) (σ : Sub τ Γ Γ') (t : Tm Γ (B [ τ ]')) →
+       Wk {B = B} u [ σ , t ] ≡ u [ σ ]
+
+SubWk∘ : {n m n' : ℕ} {Γ : Con n} {Δ : Con m} {Γ' : Con n'}
+         {τ : SubTy n m} {τ' : SubTy m n'} {B : Ty m}
+         (ρ : Sub τ' Δ Γ') (σ : Sub τ Γ Δ) (t : Tm Γ (B [ τ ]')) →
+         SubWk ρ B ∘ (σ , t) ≡ ρ ∘ σ
+
+Wk[] (var x)        σ t = refl
+Wk[] (coh ps τ' σ') σ t = cong (coh ps _) (SubWk∘ σ' σ t)
+
+SubWk∘ {Γ' = ε}      tt      σ t = refl
+SubWk∘ {Γ' = Γ' ▹ C} (ρ , u) σ t = cong₂ _,_ (SubWk∘ ρ σ t) (Wk[] u σ t)
+
 -- Unitality of substitutions
 ∘UnitL : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {τ : SubTy n n'} (σ : Sub τ Γ Γ') → _∘_ {Γ = Γ} (SubId Γ') σ ≡ σ
 ∘UnitL {Γ' = ε} tt = refl
-∘UnitL {Γ' = Γ' ▹ A} (σ , t) = Σ-≡,≡→≡ ({!!} , {!substConst _ _!}) -- this is standard material
+∘UnitL {Γ' = Γ' ▹ A} (σ , t) = cong₂ _,_ (trans (SubWk∘ (SubId Γ') σ t) (∘UnitL σ)) refl
 
 ---
 --- Deriving basic operations
