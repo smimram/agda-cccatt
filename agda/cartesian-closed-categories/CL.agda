@@ -100,19 +100,19 @@ _[_]∼ : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A : Ty n'} {t u : Tm Γ' A} 
 _[_]∼ {σ = σ} {σ'} (Iβ t) q = ∼trans (Iβ (t [ σ ])) ((∼refl {t = t}) [ q ]∼)
 _[_]∼ {σ = σ} {σ'} (Kβ t u) q = ∼trans (Kβ (t [ σ ]) (u [ σ ])) ((∼refl {t = t}) [ q ]∼)
 _[_]∼ {σ = σ} {σ'} (Sβ t u v) q = ∼trans (∼$ (∼$ (∼$ ∼refl ((∼refl {t = t}) [ q ]∼)) ((∼refl {t = u}) [ q ]∼)) ((∼refl {t = v}) [ q ]∼)) (Sβ (t [ σ' ]) (u [ σ' ]) (v [ σ' ]))
-_[_]∼ {σ = σ} {σ'} (P₁β t u) q = {!!}
-_[_]∼ {σ = σ} {σ'} (P₂β t u) q = {!!}
-_[_]∼ {σ = σ} {σ'} (Pη t) q = {!!}
-_[_]∼ {σ = σ} {σ'} (Tη t) q = {!!}
+_[_]∼ {σ = σ} {σ'} (P₁β t u) q = ∼trans (P₁β (t [ σ ]) (u [ σ ])) ((∼refl {t = t}) [ q ]∼)
+_[_]∼ {σ = σ} {σ'} (P₂β t u) q = ∼trans (P₂β (t [ σ ]) (u [ σ ])) ((∼refl {t = u}) [ q ]∼)
+_[_]∼ {σ = σ} {σ'} (Pη t) q = ∼trans ((∼refl {t = t}) [ q ]∼) (Pη (t [ σ' ]))
+_[_]∼ {σ = σ} {σ'} (Tη t) q = Tη (t [ σ ])
 _[_]∼ lamIβ q = lamIβ
 _[_]∼ lamKβ q = lamKβ
 _[_]∼ lamSβ q = lamSβ
 _[_]∼ lamwk q = lamwk
 _[_]∼ lamη q = lamη
-_[_]∼ lamP₁ q = {!!}
-_[_]∼ lamP₂ q = {!!}
-_[_]∼ lamP q = {!!}
-_[_]∼ lamT q = {!!}
+_[_]∼ lamP₁ q = lamP₁
+_[_]∼ lamP₂ q = lamP₂
+_[_]∼ lamP q = lamP
+_[_]∼ lamT q = lamT
 _[_]∼ (∼$ p p') q = ∼$ (p [ q ]∼) (p' [ q ]∼)
 _[_]∼ {t = t} ∼refl q = lem t q
   where
