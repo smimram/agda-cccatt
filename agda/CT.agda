@@ -47,14 +47,21 @@ _∘_ : {n : ℕ} {Γ : Con n} {n' : ℕ} {Γ' : Con n'} {n'' : ℕ} {Γ'' : Con
 _∘_ {Γ'' = ε} σ' σ = tt
 _∘_ {Γ'' = Γ'' ▹ A} (σ' , t) σ = σ' ∘ σ , t [ σ ]
 
--- Functoriality of substitution application
-[∘] : {n n' n'' : ℕ} {Γ : Con n} {Γ' : Con n'} {Γ'' : Con n''} {A : Ty n''} {t : Tm Γ'' A} {τ : SubTy n n'} {σ : Sub τ Γ Γ'} {τ' : SubTy n' n''} {σ' : Sub τ' Γ' Γ''} →
-      (t [ σ' ] [ σ ]) ≡ t [ σ' ∘ σ ]
-[∘] = {!!} -- this is standard material
-
 var here [ σ , t ] = t
 var (drop x) [ σ , t ] = var x [ σ ]
 _[_] {τ = τ} {Γ = Γ} (coh {A = A} ps τ' σ') σ = coh ps (τ' ∘' τ) (σ' ∘ σ)
+
+-- Associativity of substitution composition
+∘assoc : {n n' n'' n''' : ℕ} {Γ : Con n} {Γ' : Con n'} {Γ'' : Con n''} {Γ''' : Con n'''} {τ : SubTy n n'} {τ' : SubTy n' n''} {τ'' : SubTy n'' n'''} (σ'' : Sub τ'' Γ'' Γ''') (σ' : Sub τ' Γ' Γ'') (σ : Sub τ Γ Γ') → (σ'' ∘ σ') ∘ σ ≡ σ'' ∘ (σ' ∘ σ)
+
+-- Functoriality of substitution application
+[∘] : {n n' n'' : ℕ} {Γ : Con n} {Γ' : Con n'} {Γ'' : Con n''} {A : Ty n''} {τ : SubTy n n'} {τ' : SubTy n' n''} (t : Tm Γ'' A) (σ' : Sub τ' Γ' Γ'') (σ : Sub τ Γ Γ') → (t [ σ' ] [ σ ]) ≡ t [ σ' ∘ σ ]
+[∘] (var here) (σ' , u) σ = refl
+[∘] (var (drop x)) (σ' , u) σ = [∘] (var x) σ' σ
+[∘] (coh ps τ'' σ'') σ' σ = cong (coh ps _) (∘assoc σ'' σ' σ)
+
+∘assoc {Γ''' = ε} tt σ' σ = refl
+∘assoc {Γ''' = Γ''' ▹ A} (σ'' , t) σ' σ = cong₂ _,_ (∘assoc σ'' σ' σ) ([∘] t σ' σ)
 
 -- Unitality of substitutions
 ∘UnitL : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {τ : SubTy n n'} (σ : Sub τ Γ Γ') → _∘_ {Γ = Γ} (SubId Γ') σ ≡ σ

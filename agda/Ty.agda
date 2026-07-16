@@ -87,6 +87,13 @@ SubTyUnitL {n} {suc n'} (A ∷ τ) = cong (A ∷_) (trans (SubTyWk∘' (SubTyId 
 {-# REWRITE [∘'] #-}
 {-# REWRITE SubTyUnitL #-}
 
+-- Associativity of substitution composition
+∘'-assoc : {n n' n'' n''' : ℕ} (τ'' : SubTy n'' n''') (τ' : SubTy n' n'') (τ : SubTy n n') → (τ'' ∘' τ') ∘' τ ≡ τ'' ∘' (τ' ∘' τ)
+∘'-assoc []        τ' τ = refl
+∘'-assoc (A ∷ τ'') τ' τ = cong₂ _∷_ refl (∘'-assoc τ'' τ' τ)
+
+{-# REWRITE ∘'-assoc #-}
+
 -- Contexts
 data Con (n : ℕ) : Set where
   ε : Con n
