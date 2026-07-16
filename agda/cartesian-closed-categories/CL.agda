@@ -22,6 +22,10 @@ data _∼_ {n : ℕ} {Γ : Con n} : {A : Ty n} → Tm Γ A → Tm Γ A → Type 
   Iβ : {A : Ty n} (t : Tm Γ A) → I $ t ∼ t
   Kβ : {A B : Ty n} (t : Tm Γ A) (u : Tm Γ B) → K $ t $ u ∼ t
   Sβ : {A B C : Ty n} (t : Tm Γ (A ⇒ B ⇒ C)) (u : Tm Γ (A ⇒ B)) (v : Tm Γ A) → S $ t $ u $ v ∼ t $ v $ (u $ v)
+  P₁β : {A B : Ty n} (t : Tm Γ A) (u : Tm Γ B) → P₁ $ (P $ t $ u) ∼ t
+  P₂β : {A B : Ty n} (t : Tm Γ A) (u : Tm Γ B) → P₂ $ (P $ t $ u) ∼ u
+  Pη : {A B : Ty n} (t : Tm Γ (A × B)) → t ∼ P $ (P₁ $ t) $ (P₂ $ t)
+  Tη : (t : Tm Γ 𝟙) → t ∼ T
   lamIβ : {A B : Ty n} → _∼_ {A = (A ⇒ B) ⇒ A ⇒ B}
           (S $ (K $ I))
           I
@@ -37,6 +41,16 @@ data _∼_ {n : ℕ} {Γ : Con n} : {A : Ty n} → Tm Γ A → Tm Γ A → Type 
   lamη : {A B : Ty n} → _∼_ {A = ((A ⇒ B) ⇒ A ⇒ B)}
          (S $ (S $ (K $ S) $ K) $ (K $ I))
          I
+  lamP₁ : {A B C : Ty n} → _∼_ {A = (A ⇒ B) ⇒ (A ⇒ C) ⇒ A ⇒ B}
+          (S $ (K $ (S $ (K $ (S $ (K $ P₁))))) $ (S $ (K $ S) $ (S $ (K $ P))))
+          K
+  lamP₂ : {A B C : Ty n} → _∼_ {A = (A ⇒ B) ⇒ (A ⇒ C) ⇒ A ⇒ C}
+          (S $ (K $ (S $ (K $ (S $ (K $ P₂))))) $ (S $ (K $ S) $ (S $ (K $ P))))
+          (K $ I)
+  lamP : {A B C : Ty n} → _∼_ {A = (A ⇒ B × C) ⇒ A ⇒ B × C}
+         (S $ (S $ (K $ S) $ (S $ (K $ (S $ (K $ P))) $ (S $ (K $ P₁)))) $ (S $ (K $ P₂)))
+         I
+  lamT : (K $ T) ∼ I
   ∼$ : {A B : Ty n} {t t' : Tm Γ (A ⇒ B)} {u u' : Tm Γ A} → t ∼ t' → u ∼ u' → t $ u ∼ t' $ u'
   ∼refl : {A : Ty n} {t : Tm Γ A} → t ∼ t
   ∼sym : {A : Ty n} {t u : Tm Γ A} → t ∼ u → u ∼ t
