@@ -168,9 +168,22 @@ _∼Sub_ {Γ = Γ} {Γ' = Γ' ▹ A} (σ , t) (σ' , t') = (_∼Sub_ {Γ = Γ} �
 ∼SubSym {Γ' = Γ' ▹ A} (p , q) = ∼SubSym p , ∼sym q
 
 _[_]∼ : {n n' : ℕ} {τ : SubTy n n'} {Γ : Con n} {Γ' : Con n'} {A : Ty n'} (t : Tm Γ' A) {σ σ' : Sub τ Γ Γ'} → σ ∼Sub σ' → t [ σ ] ∼ t [ σ' ]
+
+-- Equivalent substitutions are closed under left composition
+∘∼ : {n m k : ℕ} {Γ : Con n} {Δ : Con m} {Θ : Con k}
+     {ρ : SubTy n m} {τ : SubTy m k}
+     (σ : Sub τ Δ Θ) {σ₀ σ₀' : Sub ρ Γ Δ} →
+     σ₀ ∼Sub σ₀' → (σ ∘ σ₀) ∼Sub (σ ∘ σ₀')
+∘∼ {Θ = ε}      tt      p = tt
+∘∼ {Θ = Θ ▹ A} (σ , t) p = ∘∼ σ p , t [ p ]∼
+
 var here [ p ]∼ = snd p
 var (drop x) [ p ]∼ = (var x) [ fst p ]∼
-coh ps τ σ [ p ]∼ = {!!} -- equivalent substitutions are closed under left composition
+_[_]∼ (coh ps τ σ) {σ₀} {σ₀'} p =
+  subst₂ _∼_
+    (cong (coh ps _) (∘UnitL (σ ∘ σ₀)))
+    (cong (coh ps _) (∘UnitL (σ ∘ σ₀')))
+    (eq ps (coh ps (SubTyId _) (SubId _)) (coh ps (SubTyId _) (SubId _)) _ (∘∼ σ p))
 
 apI : {n : ℕ} {Γ : Con n} {A : Ty n} (t : Tm Γ A) → ap I t ∼ t
 apI {n} {Γ} {A} t = eqs PSX⊢X (ap I (var here)) (var here) τ σ
