@@ -378,15 +378,15 @@ evalR (pair f g) ρ {u = u} r =
   R∼ _ (∼sym (∼trans (assoc u (pair (ren ρ f) (ren ρ g)) snd) (∼· ∼refl (psnd (ren ρ f) (ren ρ g))))) (evalR g ρ r)
 evalR fst ρ r = proj₁ r
 evalR snd ρ r = proj₂ r
-evalR {A = A} (abs f) ρ {u = u} r = λ ρ' {w} q →
-  R∼ _ (∼sym (absβ (ren ρ' u) w (ren ρ' (ren ρ f))))
-    (subst (λ F → R _ (pair (ren ρ' u) w · F) ?) (sym (renComp ρ' ρ f))
+evalR {A = A} (abs {B = B} {C} f) ρ {u = u} {v = v} r = λ ρ' {w} {b} q →
+  R∼ C (∼sym (absβ (ren ρ' u) w (ren ρ' (ren ρ f))))
+    (subst (λ F → R C (pair (ren ρ' u) w · F) (eval f (ρ' ∘R ρ) (⟦⟧wk A ρ' v , b))) (sym (renComp ρ' ρ f))
       (evalR f (ρ' ∘R ρ)
         ( R∼ A (∼sym (pfst (ren ρ' u) w)) (Rwk A ρ' r)
-        , R∼ _ (∼sym (psnd (ren ρ' u) w)) q )))
-evalR {B = B} app ρ {u = u} (r , s) =
+        , R∼ B (∼sym (psnd (ren ρ' u) w)) q )))
+evalR {B = B} app ρ {u = u} {v = g , a} (r , s) =
   R∼ B (∼· (∼sym (pext u)) ∼refl)
-    (subst (λ h → R B (pair h (u · snd) · app) ?) (renId (u · fst)) (r idRen s))
+    (subst (λ h → R B (pair h (u · snd) · app) (g idRen a)) (renId (u · fst)) (r idRen s))
 
 --- Soundness
 
