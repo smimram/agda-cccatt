@@ -40,6 +40,10 @@ data PStgtCon {n} Γ x where
   tgt-here : {Δ : Con n} {A B : Ty n} → noTgtCon x Δ → PS Γ A → PStgt Γ x B → PStgtCon Γ x (Δ ▹ (A , B))
   tgt-drop : {Δ : Con n} {A B : Ty n} → PStgtCon Γ x Δ → noTgt x B → PStgtCon Γ x (Δ ▹ (A , B))
 
+-- A pasting scheme for an arrow: an arrow (A , B) is pasted as the type A ⇒ B
+PSArr : {n : ℕ} (Γ : Con n) (A : Arr n) → Type
+PSArr Γ (A , B) = PS Γ (A ⇒ B)
+
 -- The head variable selected by a target occurrence
 tgtVar : {n : ℕ} {Γ Δ : Con n} {x : Fin n} → PStgtCon Γ x Δ → Σ[ A ∈ Arr n ] (A ∈ Δ)
 tgtVar (tgt-here _ _ _) = _ , here
@@ -48,19 +52,19 @@ tgtVar (tgt-drop t _) = _ , drop (proj₂ (tgtVar t))
 --- Examples
 
 -- ⊢ X ⇒ X
-PS⊢X⇒X' : PS {n = 1} ε (X (# 0) ⇒ X (# 0))
-PS⊢X⇒X' = ps-abs (ps-neu (tgt-here no-ε ps-term tgt-X))
+PS⊢X⇒X : PS {n = 1} ε (X (# 0) ⇒ X (# 0))
+PS⊢X⇒X = ps-abs (ps-neu (tgt-here no-ε ps-term tgt-X))
 
 -- X ⇒ Y ⊢ X ⇒ Y
-PSX⇒Y⊢X⇒Y' : PS {n = 2} (ε ▹ (X (# 0) , X (# 1))) (X (# 0) ⇒ X (# 1))
-PSX⇒Y⊢X⇒Y' =
+PSX⇒Y⊢X⇒Y : PS {n = 2} (ε ▹ (X (# 0) , X (# 1))) (X (# 0) ⇒ X (# 1))
+PSX⇒Y⊢X⇒Y =
   ps-abs (ps-neu (tgt-drop
     (tgt-here no-ε (ps-neu (tgt-here (no-▹ no-ε (no-X λ ())) ps-term tgt-X)) tgt-X)
     (no-X λ ())))
 
 -- X ⇒ Y , Y ⇒ Z ⊢ X ⇒ Z
-PSX⇒Y,Y⇒Z⊢X⇒Z' : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 1) , X (# 2))) (X (# 0) ⇒ X (# 2))
-PSX⇒Y,Y⇒Z⊢X⇒Z' = ps-abs (ps-neu ps-Z)
+PSX⇒Y,Y⇒Z⊢X⇒Z : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 1) , X (# 2))) (X (# 0) ⇒ X (# 2))
+PSX⇒Y,Y⇒Z⊢X⇒Z = ps-abs (ps-neu ps-Z)
   where
   -- X is produced by the variable bound by the abstraction
   ps-X : PS _ (X (# 0))
@@ -73,24 +77,24 @@ PSX⇒Y,Y⇒Z⊢X⇒Z' = ps-abs (ps-neu ps-Z)
   ps-Z = tgt-drop (tgt-here (no-▹ no-ε (no-X λ ())) ps-Y tgt-X) (no-X λ ())
 
 -- ⊢ X ⇒ 1
-PS⊢X⇒𝟙' : PS {n = 1} ε (X (# 0) ⇒ 𝟙)
-PS⊢X⇒𝟙' = ps-abs ps-term
+PS⊢X⇒𝟙 : PS {n = 1} ε (X (# 0) ⇒ 𝟙)
+PS⊢X⇒𝟙 = ps-abs ps-term
 
 -- ⊢ X × Y ⇒ X   (the projection is forced by tgt-l)
-PS⊢X×Y⇒X' : PS {n = 2} ε ((X (# 0) × X (# 1)) ⇒ X (# 0))
-PS⊢X×Y⇒X' = ps-abs (ps-neu (tgt-here no-ε ps-term (tgt-l tgt-X (no-X λ ()))))
+PS⊢X×Y⇒X : PS {n = 2} ε ((X (# 0) × X (# 1)) ⇒ X (# 0))
+PS⊢X×Y⇒X = ps-abs (ps-neu (tgt-here no-ε ps-term (tgt-l tgt-X (no-X λ ()))))
 
-PS⊢X×Y⇒Y' : PS {n = 2} ε ((X (# 0) × X (# 1)) ⇒ X (# 1))
-PS⊢X×Y⇒Y' = ps-abs (ps-neu (tgt-here no-ε ps-term (tgt-r (no-X λ ()) tgt-X)))
+PS⊢X×Y⇒Y : PS {n = 2} ε ((X (# 0) × X (# 1)) ⇒ X (# 1))
+PS⊢X×Y⇒Y = ps-abs (ps-neu (tgt-here no-ε ps-term (tgt-r (no-X λ ()) tgt-X)))
 
-PS⊢X×Y⇒X×Y' : PS {n = 2} ε ((X (# 0) × X (# 1)) ⇒ (X (# 0) × X (# 1)))
-PS⊢X×Y⇒X×Y' = ps-abs (ps-pair
+PS⊢X×Y⇒X×Y : PS {n = 2} ε ((X (# 0) × X (# 1)) ⇒ (X (# 0) × X (# 1)))
+PS⊢X×Y⇒X×Y = ps-abs (ps-pair
   (ps-neu (tgt-here no-ε ps-term (tgt-l tgt-X (no-X λ ()))))
   (ps-neu (tgt-here no-ε ps-term (tgt-r (no-X λ ()) tgt-X))))
 
 -- X ⇒ Y , X ⇒ Z ⊢ X ⇒ Y × Z   (X is shared as a *source*, which is allowed)
-PSX⇒Y,X⇒Z⊢X⇒Y×Z' : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 0) , X (# 2))) (X (# 0) ⇒ (X (# 1) × X (# 2)))
-PSX⇒Y,X⇒Z⊢X⇒Y×Z' = ps-abs (ps-pair ps-Y ps-Z)
+PSX⇒Y,X⇒Z⊢X⇒Y×Z : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 0) , X (# 2))) (X (# 0) ⇒ (X (# 1) × X (# 2)))
+PSX⇒Y,X⇒Z⊢X⇒Y×Z = ps-abs (ps-pair ps-Y ps-Z)
   where
   ps-X : PS _ (X (# 0))
   ps-X = ps-neu (tgt-here (no-▹ (no-▹ no-ε (no-X λ ())) (no-X λ ())) ps-term tgt-X)
@@ -99,23 +103,45 @@ PSX⇒Y,X⇒Z⊢X⇒Y×Z' = ps-abs (ps-pair ps-Y ps-Z)
   ps-Z : PS _ (X (# 2))
   ps-Z = ps-neu (tgt-drop (tgt-here (no-▹ no-ε (no-X λ ())) ps-X tgt-X) (no-X λ ()))
 
+-- X ⇒ Y , X ⇒ Z ⊢ X ⇒ Y   (same as above, keeping only the first component)
+PSX⇒Y,X⇒Z⊢X⇒Y : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 0) , X (# 2))) (X (# 0) ⇒ X (# 1))
+PSX⇒Y,X⇒Z⊢X⇒Y = ps-abs ps-Y
+  where
+  ps-X : PS _ (X (# 0))
+  ps-X = ps-neu (tgt-here (no-▹ (no-▹ no-ε (no-X λ ())) (no-X λ ())) ps-term tgt-X)
+  ps-Y : PS _ (X (# 1))
+  ps-Y = ps-neu (tgt-drop (tgt-drop (tgt-here no-ε ps-X tgt-X) (no-X λ ())) (no-X λ ()))
+
+-- X ⇒ Y , X ⇒ Z ⊢ X ⇒ Z
+PSX⇒Y,X⇒Z⊢X⇒Z : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 0) , X (# 2))) (X (# 0) ⇒ X (# 2))
+PSX⇒Y,X⇒Z⊢X⇒Z = ps-abs ps-Z
+  where
+  ps-X : PS _ (X (# 0))
+  ps-X = ps-neu (tgt-here (no-▹ (no-▹ no-ε (no-X λ ())) (no-X λ ())) ps-term tgt-X)
+  ps-Z : PS _ (X (# 2))
+  ps-Z = ps-neu (tgt-drop (tgt-here (no-▹ no-ε (no-X λ ())) ps-X tgt-X) (no-X λ ()))
+
+-- X ⇒ 1 ⊢ X ⇒ 1   (the generator is never demanded, cf. PSX⊢X⇒𝟙 below)
+PSX⇒1⊢X⇒1 : PS {n = 1} (ε ▹ (X (# 0) , 𝟙)) (X (# 0) ⇒ 𝟙)
+PSX⇒1⊢X⇒1 = ps-abs ps-term
+
 -- ⊢ X ⇒ Y ⇒ X : the K combinator, commented out in Ty.agda but a pasting
 -- scheme indeed: Y is produced but never demanded, which is harmless
-PS⊢X⇒Y⇒X' : PS {n = 2} ε (X (# 0) ⇒ X (# 1) ⇒ X (# 0))
-PS⊢X⇒Y⇒X' = ps-abs (ps-abs (ps-neu (tgt-drop (tgt-here no-ε ps-term tgt-X) (no-X λ ()))))
+PS⊢X⇒Y⇒X : PS {n = 2} ε (X (# 0) ⇒ X (# 1) ⇒ X (# 0))
+PS⊢X⇒Y⇒X = ps-abs (ps-abs (ps-neu (tgt-drop (tgt-here no-ε ps-term tgt-X) (no-X λ ()))))
 
 -- ⊢ (X ⇒ Y) ⇒ X ⇒ Y : the only example using tgt-⇒, i.e. an application. Note
 -- that noTgt sees X as absent from X ⇒ Y, sources being consumed not produced
-PS⊢[X⇒Y]⇒X⇒Y' : PS {n = 2} ε ((X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 1))
-PS⊢[X⇒Y]⇒X⇒Y' = ps-abs (ps-abs (ps-neu (tgt-drop (tgt-here no-ε ps-term (tgt-⇒ ps-X tgt-X)) (no-X λ ()))))
+PS⊢[X⇒Y]⇒X⇒Y : PS {n = 2} ε ((X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 1))
+PS⊢[X⇒Y]⇒X⇒Y = ps-abs (ps-abs (ps-neu (tgt-drop (tgt-here no-ε ps-term (tgt-⇒ ps-X tgt-X)) (no-X λ ()))))
   where
   ps-X : PS _ (X (# 0))
   ps-X = ps-neu (tgt-here (no-▹ no-ε (no-⇒ (no-X λ ()))) ps-term tgt-X)
 
 -- Demand-driven: X is produced twice here, but never demanded, so this still
 -- is a pasting scheme (its unique term being abs term)
-PSX⊢X⇒𝟙' : PS {n = 1} (ε ▹ (𝟙 , X (# 0))) (X (# 0) ⇒ 𝟙)
-PSX⊢X⇒𝟙' = ps-abs ps-term
+PSX⊢X⇒𝟙 : PS {n = 1} (ε ▹ (𝟙 , X (# 0))) (X (# 0) ⇒ 𝟙)
+PSX⊢X⇒𝟙 = ps-abs ps-term
 
 -- Non-example: two producers for X, so that the head variable is not
 -- determined and both branches of PStgtCon require X ≢ X

@@ -2,6 +2,7 @@
 
 open import Prelude
 open import Ty
+open import PS
 
 -- Terms
 data Tm {n : ℕ} (Γ : Con n) : (A : Arr n) → Type
@@ -13,7 +14,7 @@ Sub τ Γ (Γ' ▹ (A , B)) = Sub τ Γ Γ' ∧ Tm Γ (A [ τ ]' , B [ τ ]')
 
 data Tm {n} Γ where
   var : {A : Arr n} → A ∈ Γ → Tm Γ A
-  coh : {n' : ℕ} {Γ' : Con n'} {A B : Ty n'} (ps : PS Γ' (A , B)) (τ : SubTy n n') (σ : Sub τ Γ Γ') → Tm Γ (A [ τ ]' , B [ τ ]')
+  coh : {n' : ℕ} {Γ' : Con n'} {A B : Ty n'} (ps : PSArr Γ' (A , B)) (τ : SubTy n n') (σ : Sub τ Γ Γ') → Tm Γ (A [ τ ]' , B [ τ ]')
 
 Wk : {n : ℕ} {Γ : Con n} {A B : Arr n} → Tm Γ A → Tm (Γ ▹ B) A
 SubWk : {n n' : ℕ} {τ : SubTy n n'} {Γ : Con n} {Γ' : Con n'} (σ : Sub τ Γ Γ') (A : Arr n) → Sub τ (Γ ▹ A) Γ'
@@ -59,7 +60,7 @@ _[_] {τ = τ} {Γ = Γ} (coh {A = A} ps τ' σ') σ = coh ps (τ' ∘' τ) (σ'
 -- Unitality of substitutions
 ∘UnitL : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {τ : SubTy n n'} (σ : Sub τ Γ Γ') → _∘_ {Γ = Γ} (SubId Γ') σ ≡ σ
 ∘UnitL {Γ' = ε} tt = refl
-∘UnitL {Γ' = Γ' ▹ A} (σ , t) = Σ-≡,≡→≡ ({!!} , {!substConst _ _!}) -- this is standard material
+∘UnitL {Γ' = Γ' ▹ A} (σ , t) = ? -- this is standard material
 
 ---
 --- Deriving basic operations
@@ -75,7 +76,7 @@ infixl 6 _·_
 _·_ = comp
 
 term : {n : ℕ} {Γ : Con n} {A : Ty n} → Tm Γ (A , 𝟙)
-term = coh PS⊢X⇒1 (SubTy1 _) tt
+term = coh PS⊢X⇒𝟙 (SubTy1 _) tt
 
 fst : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A × B , A)
 fst = coh PS⊢X×Y⇒X (SubTy2 _ _) tt
@@ -91,7 +92,7 @@ pair f g = coh PSX⇒Y,X⇒Z⊢X⇒Y×Z (SubTy3 _ _ _) ((tt , f) , g)
 ---
 
 -- Applying coh with equal substitutions gives equal terms
-coh≡ : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A B : Ty n'} (ps : PS Γ' (A , B)) {τ τ' : SubTy n n'} (p : τ ≡ τ') → {σ : Sub τ Γ Γ'} {σ' : Sub τ' Γ Γ'} → subst (λ τ → Sub τ Γ Γ') p σ ≡ σ' → subst (λ τ → Tm Γ (A [ τ ]' , B [ τ ]')) p (coh ps τ σ) ≡ coh ps τ' σ'
+coh≡ : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A B : Ty n'} (ps : PSArr Γ' (A , B)) {τ τ' : SubTy n n'} (p : τ ≡ τ') → {σ : Sub τ Γ Γ'} {σ' : Sub τ' Γ Γ'} → subst (λ τ → Sub τ Γ Γ') p σ ≡ σ' → subst (λ τ → Tm Γ (A [ τ ]' , B [ τ ]')) p (coh ps τ σ) ≡ coh ps τ' σ'
 coh≡ ps refl refl = refl
 
 infix 5 _∼_
@@ -104,15 +105,15 @@ _∼Sub_   : {n n' : ℕ} {τ : SubTy n n'} {Γ : Con n} {Γ' : Con n'} → Sub 
 -- Equivalence of terms
 data _∼_ {n : ℕ} {Γ : Con n} : {A : Arr n} → Tm Γ A → Tm Γ A → Type where
   eqv : {A : Arr n} (x : A ∈ Γ) → var x ∼ var x
-  eq  : {n' : ℕ} {Γ' : Con n'} {A : Arr n'} (ps : PS Γ' A) (t t' : Tm Γ' A) (τ : SubTy n n') {σ σ' : Sub τ Γ Γ'} (p : _∼Sub_ {Γ = Γ} σ σ') → t [ σ ] ∼ t' [ σ' ]
+  eq  : {n' : ℕ} {Γ' : Con n'} {A : Arr n'} (ps : PSArr Γ' A) (t t' : Tm Γ' A) (τ : SubTy n n') {σ σ' : Sub τ Γ Γ'} (p : _∼Sub_ {Γ = Γ} σ σ') → t [ σ ] ∼ t' [ σ' ]
   -- TODO: can this be derived???
   ∼trans : {A : Arr n} {t u v : Tm Γ A} (p : t ∼ u) (q : u ∼ v) → t ∼ v
 
 -- simple variant of eq without ∼ for substitution
-eqs : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A : Arr n'} (ps : PS Γ' A) (t u : Tm Γ' A) (τ : SubTy n n') (σ : Sub τ Γ Γ') → t [ σ ] ∼ u [ σ ]
+eqs : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A : Arr n'} (ps : PSArr Γ' A) (t u : Tm Γ' A) (τ : SubTy n n') (σ : Sub τ Γ Γ') → t [ σ ] ∼ u [ σ ]
 eqs ps t u τ σ = eq ps t u τ (∼SubRefl σ)
 
-eqs' : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A : Arr n'} (ps : PS Γ' A) (t : Tm Γ' A) (τ : SubTy n n') {σ σ' : Sub τ Γ Γ'} → σ ∼Sub σ' → t [ σ ] ∼ t [ σ' ]
+eqs' : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A : Arr n'} (ps : PSArr Γ' A) (t : Tm Γ' A) (τ : SubTy n n') {σ σ' : Sub τ Γ Γ'} → σ ∼Sub σ' → t [ σ ] ∼ t [ σ' ]
 eqs' ps t τ p = eq ps t t τ p
 
 -- Equivalence of substitutions is reflexive
