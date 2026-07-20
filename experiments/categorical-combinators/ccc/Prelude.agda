@@ -12,5 +12,7 @@ open import Data.Product.Properties public
 infixr 30 _∙_
 _∙_ = trans
 
+⊤ = Unit
+
 substConst : {ℓ ℓ' : Level} {A : Type ℓ} {B : Type ℓ'} {x y : A} (p : x ≡ y) (b : B) → subst (λ _ → B) p b ≡ b
 substConst refl b = refl

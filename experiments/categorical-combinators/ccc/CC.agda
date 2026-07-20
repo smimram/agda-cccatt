@@ -1,5 +1,5 @@
---- Categorical combinators for cartesian closed categories
---- See for instance https://www.irif.fr/~curien/CIRM-2014.pdf
+--- Cartesian closed categories
+--- see for instance Lambek and Scott p.52
 
 open import Prelude
 open import Ty
@@ -15,7 +15,7 @@ data Tm {n : ℕ} (Γ : Con n) : Arr n → Type where
   fst  : {A B : Ty n} → Tm Γ (A × B , A)
   snd  : {A B : Ty n} → Tm Γ (A × B , B)
   abs  : {A B C : Ty n} → Tm Γ (A × B , C) → Tm Γ (A , B ⇒ C)
-  app  : {B C : Ty n} → Tm Γ ((B ⇒ C) × B , C)
+  app  : {A B : Ty n} → Tm Γ ((A ⇒ B) × A , B)
 
 infix 5 _∼_
 
