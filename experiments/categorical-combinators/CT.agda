@@ -110,6 +110,12 @@ snd = coh PS⊢X×Y⇒Y (SubTy2 _ _) tt
 pair : {n : ℕ} {Γ : Con n} {X A B : Ty n} → Tm Γ (X , A) → Tm Γ (X , B) → Tm Γ (X , A × B)
 pair f g = coh PSX⇒Y,X⇒Z⊢X⇒Y×Z (SubTy3 _ _ _) ((tt , f) , g)
 
+abs : {n : ℕ} {Γ : Con n} {A B C : Ty n} → Tm Γ (A × B , C) → Tm Γ (A , B ⇒ C)
+abs f = coh PSX×Y⇒Z⊢X⇒Y⇒Z (SubTy3 _ _ _) (tt , f)
+
+app : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ ((A ⇒ B) × A , B)
+app = coh PS⊢[X⇒Y]×X⇒Y (SubTy2 _ _) tt
+
 ---
 --- Relations
 ---
@@ -200,8 +206,37 @@ pfst f g = eqs PSX⇒Y,X⇒Z⊢X⇒Y (pair (var (drop here)) (var here) · fst) 
 psnd : {n : ℕ} {Γ : Con n} {X A B : Ty n} (f : Tm Γ (X , A)) (g : Tm Γ (X , B)) → pair f g · snd ∼ g
 psnd f g = eqs PSX⇒Y,X⇒Z⊢X⇒Z (pair (var (drop here)) (var here) · snd) (var here) (SubTy3 _ _ _) ((tt , f) , g)
 
-pext : {n : ℕ} {Γ : Con n} {A B : Ty n} → pair fst snd ∼ id {Γ = Γ} {A = A × B}
-pext = eqs PS⊢X×Y⇒X×Y (pair fst snd) id (SubTy2 _ _) tt
+-- η for products, in the form used by CC (the biased version, pair fst snd ∼ id,
+-- is the particular case f = id)
+pext : {n : ℕ} {Γ : Con n} {A B C : Ty n} (f : Tm Γ (A , B × C)) → f ∼ pair (f · fst) (f · snd)
+pext f = eqs PSX⇒Y×Z⊢X⇒Y×Z (var here) (pair (var here · fst) (var here · snd)) (SubTy3 _ _ _) (tt , f)
 
 text : {n : ℕ} {Γ : Con n} {A : Ty n} (f : Tm Γ (A , 𝟙)) → f ∼ term
 text f = eqs PSX⇒1⊢X⇒1 (var here) term (SubTy1 _) (tt , f)
+
+assoc : {n : ℕ} {Γ : Con n} {A B C D : Ty n} (f : Tm Γ (A , B)) (g : Tm Γ (B , C)) (h : Tm Γ (C , D)) → (f · g) · h ∼ f · (g · h)
+assoc f g h =
+  eqs PSX⇒Y,Y⇒Z,Z⇒W⊢X⇒W
+    ((var (drop (drop here)) · var (drop here)) · var here)
+    (var (drop (drop here)) · (var (drop here) · var here))
+    (SubTy4 _ _ _ _) (((tt , f) , g) , h)
+
+-- β for abstraction
+aβ : {n : ℕ} {Γ : Con n} {A B C : Ty n} (f : Tm Γ (A × B , C)) → pair (fst · abs f) snd · app ∼ f
+aβ f = eqs PSX×Y⇒Z⊢X×Y⇒Z (pair (fst · abs (var here)) snd · app) (var here) (SubTy3 _ _ _) (tt , f)
+
+-- η for abstraction
+aext : {n : ℕ} {Γ : Con n} {A B C : Ty n} (f : Tm Γ (A , B ⇒ C)) → f ∼ abs (pair (fst · f) snd · app)
+aext f = eqs PSX⇒Y⇒Z⊢X⇒Y⇒Z (var here) (abs (pair (fst · var here) snd · app)) (SubTy3 _ _ _) (tt , f)
+
+--- Congruences: each is an instance of eqs', i.e. the same term of a pasting
+--- scheme applied to two equivalent substitutions
+
+∼· : {n : ℕ} {Γ : Con n} {A B C : Ty n} {f f' : Tm Γ (A , B)} {g g' : Tm Γ (B , C)} → f ∼ f' → g ∼ g' → f · g ∼ f' · g'
+∼· p q = eqs' PSX⇒Y,Y⇒Z⊢X⇒Z (var (drop here) · var here) (SubTy3 _ _ _) ((tt , p) , q)
+
+∼pair : {n : ℕ} {Γ : Con n} {X A B : Ty n} {f f' : Tm Γ (X , A)} {g g' : Tm Γ (X , B)} → f ∼ f' → g ∼ g' → pair f g ∼ pair f' g'
+∼pair p q = eqs' PSX⇒Y,X⇒Z⊢X⇒Y×Z (pair (var (drop here)) (var here)) (SubTy3 _ _ _) ((tt , p) , q)
+
+∼abs : {n : ℕ} {Γ : Con n} {A B C : Ty n} {f f' : Tm Γ (A × B , C)} → f ∼ f' → abs f ∼ abs f'
+∼abs p = eqs' PSX×Y⇒Z⊢X⇒Y⇒Z (abs (var here)) (SubTy3 _ _ _) (tt , p)
