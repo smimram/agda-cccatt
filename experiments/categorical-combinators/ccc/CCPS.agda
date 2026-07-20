@@ -129,5 +129,33 @@ TgtUniq (tgt-⇒ a q) (rtgt-⇒ u cu k) t = TgtUniq q k _ ∙ cong (λ v → PST
 PSCanEq' : {n : ℕ} {Γ : Con n} {A : Ty n} (ps : PS Γ A) {t u : Tm Γ (𝟙 , A)} → canonical t → canonical u → t ∼ u
 PSCanEq' ps ct cu = ≡→∼ (CanUniq ps ct ∙ sym (CanUniq ps cu))
 
-PSCanEq : {n : ℕ} {Γ : Con n} {A B : Ty n} (ps : PS Γ (A ⇒ B)) {t u : Tm Γ (A , B)} → canonical {!!} → canonical {!!} → t ∼ u
-PSCanEq = {!!}
+-- Any two terms of a pasting scheme are equivalent: normalizing them (this is
+-- where NF is used) brings us back to the canonical case above
+PSEq' : {n : ℕ} {Γ : Con n} {A : Ty n} (ps : PS Γ A) (t u : Tm Γ (𝟙 , A)) → t ∼ u
+PSEq' ps t u = ∼trans (nf∼ t) (∼trans (PSCanEq' ps (nfCan t) (nfCan u)) (∼sym (nf∼ u)))
+
+--- Terms with an arbitrary source
+
+-- Currying against the terminal source, which brings a term with source A back
+-- to a term with source 𝟙
+curry : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A , B) → Tm Γ (𝟙 , A ⇒ B)
+curry t = abs (snd · t)
+
+-- ... and its inverse
+uncurry : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (𝟙 , A ⇒ B) → Tm Γ (A , B)
+uncurry t = pair (term · t) id · app
+
+uncurryCurry : {n : ℕ} {Γ : Con n} {A B : Ty n} (t : Tm Γ (A , B)) → uncurry (curry t) ∼ t
+uncurryCurry t =
+  ∼trans (absβ term id (snd · t))
+  (∼trans (∼sym (assoc (pair term id) snd t))
+  (∼trans (∼· (psnd term id) ∼refl) (unitl t)))
+
+-- Two terms of a pasting scheme are equivalent, for an arbitrary source: the
+-- source is the domain of the pasted type, so that currying lands in the
+-- pasting scheme itself
+PSCanEq : {n : ℕ} {Γ : Con n} {A B : Ty n} (ps : PS Γ (A ⇒ B)) (t u : Tm Γ (A , B)) → t ∼ u
+PSCanEq ps t u =
+  ∼trans (∼sym (uncurryCurry t))
+  (∼trans (∼· (∼pair (∼· ∼refl (PSEq' ps (curry t) (curry u))) ∼refl) ∼refl)
+          (uncurryCurry u))

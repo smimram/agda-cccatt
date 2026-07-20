@@ -217,8 +217,9 @@ absComp h g = ∼trans (aext (h · abs g)) (∼abs (∼trans
   (∼trans (∼· (∼sym (pairComp (pair (fst · h) snd) (fst · abs g) snd)) ∼refl)
           (∼trans (assoc (pair (fst · h) snd) (pair (fst · abs g) snd) app) (∼· ∼refl (aβ g))))))
 
--- β in pointed form: applying an abstraction to a point
-absβ : {n : ℕ} {Γ : Con n} {A B C : Ty n} (u : Tm Γ (𝟙 , A)) (w : Tm Γ (𝟙 , B)) (g : Tm Γ (A × B , C)) → pair (u · abs g) w · app ∼ pair u w · g
+-- β in paired form: applying an abstraction to an argument, both given as
+-- components of a pairing
+absβ : {n : ℕ} {Γ : Con n} {E A B C : Ty n} (u : Tm Γ (E , A)) (w : Tm Γ (E , B)) (g : Tm Γ (A × B , C)) → pair (u · abs g) w · app ∼ pair u w · g
 absβ u w g = ∼trans
   (∼· (∼pair (∼trans (∼· (∼sym (pfst u w)) ∼refl) (assoc (pair u w) fst (abs g)))
              (∼sym (psnd u w)))
