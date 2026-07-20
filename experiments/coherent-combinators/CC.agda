@@ -40,7 +40,7 @@ data _∼_ {n : ℕ} {Γ : Con n} : {A : Arr n} → Tm Γ A → Tm Γ A → Type
 module ∼-Reasoning {n : ℕ} {Γ : Con n} where
 
   infix  1 begin∼_
-  infixr 2 _∼⟨_⟩_ _∼⟨⟩_
+  infixr 2 _∼⟨_⟩_  _∼⟨⟩_
   infix  3 _∎∼
 
   begin∼_ : {A : Arr n} {f g : Tm Γ A} → f ∼ g → f ∼ g
