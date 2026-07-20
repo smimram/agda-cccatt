@@ -2,6 +2,13 @@ open import Prelude
 open import Data.List
 open import Ty hiding (PS)
 
+-- A variable occurs exactly once in the target of a type
+data hasTarget {n : ℕ} (x : Fin n) : Ty n → Type
+
+data hasTarget {n = n} x where
+  targetX : hasTarget x (X x)
+  -- target⇒ : {A B : Ty n} → hasTarget x B → hasTarget x (A ⇒ B)
+
 -- List of variables occurring as targets
 targets : {n : ℕ} (A : Ty n) → List (Fin n)
 targets (X x) = x ∷ []
