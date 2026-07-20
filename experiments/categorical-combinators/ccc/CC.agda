@@ -14,29 +14,24 @@ data Tm {n : ℕ} (Γ : Con n) : Arr n → Type where
   pair : {X A B : Ty n} → Tm Γ (X , A) → Tm Γ (X , B) → Tm Γ (X , A × B)
   fst  : {A B : Ty n} → Tm Γ (A × B , A)
   snd  : {A B : Ty n} → Tm Γ (A × B , B)
-  curry : {A B C : Ty n} → Tm Γ (A × B , C) → Tm Γ (A , B ⇒ C)
-  uncurry : {A B C : Ty n} → Tm Γ (A , B ⇒ C) → Tm Γ (A × B , C)
+  abs  : {A B C : Ty n} → Tm Γ (A × B , C) → Tm Γ (A , B ⇒ C)
+  app  : {B C : Ty n} → Tm Γ ((B ⇒ C) × B , C)
 
 infix 5 _∼_
 
 data _∼_ {n : ℕ} {Γ : Con n} : {A : Arr n} → Tm Γ A → Tm Γ A → Type where
   pfst : {X A B : Ty n} (f : Tm Γ (X , A)) (g : Tm Γ (X , B)) → pair f g · fst ∼ f
   psnd : {X A B : Ty n} (f : Tm Γ (X , A)) (g : Tm Γ (X , B)) → pair f g · snd ∼ g
-  pnat : {A' A B C : Ty n} (f : Tm Γ (A' , A)) (g : Tm Γ (A , B)) (h : Tm Γ (A , C)) → f · pair g h ∼ pair (f · g) (f · h)
-  -- NOTE: both pext are equivalent in presence of naturality
-  -- pext : {X A B : Ty n} (f : Tm Γ (X , A × B)) → pair (f · fst) (f · snd) ∼ f
-  pext : {A B : Ty n} → pair fst snd ∼ id {A = A × B}
+  pext : {A B C : Ty n} (f : Tm Γ (A , B × C)) → f ∼ pair (f · fst) (f · snd)
   text : {A : Ty n} (f : Tm Γ (A , 𝟙)) → f ∼ term
-  eβ : {A B C : Ty n} (f : Tm Γ (A × B , C)) → uncurry (curry f) ∼ f
-  eext : {A B C : Ty n} (f : Tm Γ (A , B ⇒ C)) → curry (uncurry f) ∼ f
-  enat : {A' A B C : Ty n} (f : Tm Γ (A' , A)) (g : Tm Γ (A , B ⇒ C)) → uncurry (f · g) ∼ pair (fst · f) snd · uncurry g
+  aβ : {A B C : Ty n} (f : Tm Γ (A × B , C)) → pair (fst · abs f) snd · app ∼ f
+  aext : {A B C : Ty n} (f : Tm Γ (A , B ⇒ C)) → f ∼ abs (pair (fst · f) snd · app)
   unitl : {A B : Ty n} (f : Tm Γ (A , B)) → id · f ∼ f
   unitr : {A B : Ty n} (f : Tm Γ (A , B)) → f · id ∼ f
   assoc : {A B C D : Ty n} (f : Tm Γ (A , B)) (g : Tm Γ (B , C)) (h : Tm Γ (C , D)) → (f · g) · h ∼ f · (g · h)
   ∼· : {A B C : Ty n} {f f' : Tm Γ (A , B)} {g g' : Tm Γ (B , C)} → f ∼ f' → g ∼ g' → f · g ∼ f' · g'
   ∼pair : {X A B : Ty n} {f f' : Tm Γ (X , A)} {g g' : Tm Γ (X , B)} → f ∼ f' → g ∼ g' → pair f g ∼ pair f' g'
-  ∼curry : {A B C : Ty n} {f f' : Tm Γ (A × B , C)} → f ∼ f' → curry f ∼ curry f'
-  ∼uncurry : {A B C : Ty n} {f f' : Tm Γ (A , B ⇒ C)} → f ∼ f' → uncurry f ∼ uncurry f'
+  ∼abs : {A B C : Ty n} {f f' : Tm Γ (A × B , C)} → f ∼ f' → abs f ∼ abs f'
   ∼refl : {A : Arr n} {f : Tm Γ A} → f ∼ f
   ∼sym  : {A : Arr n} {f g : Tm Γ A} → f ∼ g → g ∼ f
   ∼trans : {A : Arr n} {f g h : Tm Γ A} → f ∼ g → g ∼ h → f ∼ h
@@ -65,8 +60,8 @@ term [ σ ] = term
 pair f g [ σ ] = pair (f [ σ ]) (g [ σ ])
 fst [ σ ] = fst
 snd [ σ ] = snd
-curry t [ σ ] = curry (t [ σ ])
-uncurry t [ σ ] = uncurry (t [ σ ])
+abs t [ σ ] = abs (t [ σ ])
+app [ σ ] = app
 
 -- Equivalence of substitutions
 _∼Sub_ : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {τ : SubTy n n'} (σ σ' : Sub τ Γ Γ') → Type
@@ -92,25 +87,22 @@ _∼Sub_ {Γ' = Γ' ▹ A} (σ , t) (σ' , t') = (σ ∼Sub σ') ∧ (t ∼ t')
 []∼ (pair f g) p = ∼pair ([]∼ f p) ([]∼ g p)
 []∼ fst p = ∼refl
 []∼ snd p = ∼refl
-[]∼ (curry t) p = ∼curry ([]∼ t p)
-[]∼ (uncurry t) p = ∼uncurry ([]∼ t p)
+[]∼ (abs t) p = ∼abs ([]∼ t p)
+[]∼ app p = ∼refl
 
 _[_]∼ : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A : Arr n'} {t u : Tm Γ' A} {τ : SubTy n n'} {σ σ' : Sub τ Γ Γ'} → t ∼ u → σ ∼Sub σ' → t [ σ ] ∼ u [ σ' ]
 pfst f g [ q ]∼ = ∼trans (pfst (f [ _ ]) (g [ _ ])) ([]∼ f q)
 psnd f g [ q ]∼ = ∼trans (psnd (f [ _ ]) (g [ _ ])) ([]∼ g q)
-pnat f g h [ q ]∼ = ∼trans (pnat (f [ _ ]) (g [ _ ]) (h [ _ ])) (∼pair (∼· ([]∼ f q) ([]∼ g q)) (∼· ([]∼ f q) ([]∼ h q)))
-pext [ q ]∼ = pext
+pext f [ q ]∼ = ∼trans ([]∼ f q) (pext (f [ _ ]))
 text f [ q ]∼ = text (f [ _ ])
-eβ f [ q ]∼ = ∼trans (eβ (f [ _ ])) ([]∼ f q)
-eext f [ q ]∼ = ∼trans (eext (f [ _ ])) ([]∼ f q)
-enat f g [ q ]∼ = ∼trans (enat (f [ _ ]) (g [ _ ])) (∼· (∼pair (∼· ∼refl ([]∼ f q)) ∼refl) (∼uncurry ([]∼ g q)))
+aβ f [ q ]∼ = ∼trans (aβ (f [ _ ])) ([]∼ f q)
+aext f [ q ]∼ = ∼trans ([]∼ f q) (aext (f [ _ ]))
 unitl f [ q ]∼ = ∼trans (unitl (f [ _ ])) ([]∼ f q)
 unitr f [ q ]∼ = ∼trans (unitr (f [ _ ])) ([]∼ f q)
 assoc f g h [ q ]∼ = ∼trans (assoc (f [ _ ]) (g [ _ ]) (h [ _ ])) (∼· ([]∼ f q) (∼· ([]∼ g q) ([]∼ h q)))
 ∼· p p' [ q ]∼ = ∼· (p [ q ]∼) (p' [ q ]∼)
 ∼pair p p' [ q ]∼ = ∼pair (p [ q ]∼) (p' [ q ]∼)
-∼curry p [ q ]∼ = ∼curry (p [ q ]∼)
-∼uncurry p [ q ]∼ = ∼uncurry (p [ q ]∼)
+∼abs p [ q ]∼ = ∼abs (p [ q ]∼)
 ∼refl {f = f} [ q ]∼ = []∼ f q
 ∼sym p [ q ]∼ = ∼sym (p [ ∼SubSym q ]∼)
 ∼trans p p' [ q ]∼ = ∼trans (p [ q ]∼) (p' [ ∼SubRefl _ ]∼)
@@ -130,5 +122,5 @@ _∘_ {Γ'' = Γ'' ▹ A} (σ' , t') σ = (σ' ∘ σ) , (t' [ σ ])
 [∘] (pair f g) σ' σ = cong₂ pair ([∘] f σ' σ) ([∘] g σ' σ)
 [∘] fst σ' σ = refl
 [∘] snd σ' σ = refl
-[∘] (curry t) σ' σ = cong curry ([∘] t σ' σ)
-[∘] (uncurry t) σ' σ = cong uncurry ([∘] t σ' σ)
+[∘] (abs t) σ' σ = cong abs ([∘] t σ' σ)
+[∘] app σ' σ = refl
