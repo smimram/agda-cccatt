@@ -81,7 +81,17 @@ _∘'_ : {n n' n'' : ℕ} → SubTy n' n'' → SubTy n n' → SubTy n n''
 (A ∷ τ') ∘' τ = A [ τ ]' ∷ (τ' ∘' τ)
 
 SubTyUnitL : {n n' : ℕ} (τ : SubTy n n') → SubTyId n' ∘' τ ≡ τ
-SubTyUnitL {n} {n'} τ = {!!} -- standard material
+SubTyUnitL {n} {zero} [] = refl
+SubTyUnitL {n} {suc n'} (A ∷ τ) = cong (A ∷_) (trans (SubTyWk∘' (SubTyId n')) (SubTyUnitL τ))
+  where
+  WkTy[]∷ : (B : Ty n') → WkTy B [ A ∷ τ ]' ≡ B [ τ ]'
+  WkTy[]∷ (X x) = refl
+  WkTy[]∷ 𝟙 = refl
+  WkTy[]∷ (B × B') = cong₂ _×_ (WkTy[]∷ B) (WkTy[]∷ B')
+  WkTy[]∷ (B ⇒ B') = cong₂ _⇒_ (WkTy[]∷ B) (WkTy[]∷ B')
+  SubTyWk∘' : {m : ℕ} (σ : SubTy n' m) → SubTyWk σ ∘' (A ∷ τ) ≡ σ ∘' τ
+  SubTyWk∘' [] = refl
+  SubTyWk∘' (B ∷ σ) = cong₂ _∷_ (WkTy[]∷ B) (SubTyWk∘' σ)
 
 -- Applying a substition is an action
 [∘'] : {n n' n'' : ℕ} {A : Ty n''} {τ : SubTy n n'} {τ' : SubTy n' n''} → (A [ τ' ]' [ τ ]') ≡ (A [ τ' ∘' τ ]')
@@ -93,6 +103,13 @@ SubTyUnitL {n} {n'} τ = {!!} -- standard material
 
 {-# REWRITE [∘'] #-}
 {-# REWRITE SubTyUnitL #-}
+
+-- Associativity of substitution composition
+∘'-assoc : {n n' n'' n''' : ℕ} (τ'' : SubTy n'' n''') (τ' : SubTy n' n'') (τ : SubTy n n') → (τ'' ∘' τ') ∘' τ ≡ τ'' ∘' (τ' ∘' τ)
+∘'-assoc []        τ' τ = refl
+∘'-assoc (A ∷ τ'') τ' τ = cong₂ _∷_ refl (∘'-assoc τ'' τ' τ)
+
+{-# REWRITE ∘'-assoc #-}
 
 -- Contexts
 data Con (n : ℕ) : Set where
