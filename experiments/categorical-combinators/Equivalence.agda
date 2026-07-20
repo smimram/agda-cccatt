@@ -6,6 +6,7 @@ open import Prelude
 open import Ty
 import CT
 import CC
+import CCPS
 
 --- From CT to CC
 
@@ -19,10 +20,10 @@ FSub∘ : {n n' n'' : ℕ} {Γ : Con n} {Γ' : Con n'} {Γ'' : Con n''} {τ : Su
         FSub σ' CC.∘ FSub σ ≡ FSub {Γ = Γ} (CT._∘_ {Γ = Γ} σ' σ)
 
 F (CT.var x) = CC.var x
-F (CT.coh ps τ σ) = CC.PSTm ps CC.[ FSub σ ]
+F (CT.coh ps τ σ) = CCPS.PSTm ps CC.[ FSub σ ]
 
 F∼ (CT.eqv x) = CC.∼refl
-F∼ {Γ = Γ} (CT.eq ps t u τ {σ = σ} {σ'} p) = subst₂ CC._∼_ (FSub≡ t σ) (FSub≡ u σ') ((CC.PSEq ps (F t) (F u)) CC.[ F∼Sub {Γ = Γ} p ]∼)
+F∼ {Γ = Γ} (CT.eq ps t u τ {σ = σ} {σ'} p) = subst₂ CC._∼_ (FSub≡ t σ) (FSub≡ u σ') ((CCPS.PSEq ps (F t) (F u)) CC.[ F∼Sub {Γ = Γ} p ]∼)
 F∼ (CT.∼trans p q) = CC.∼trans (F∼ p) (F∼ q)
 
 FSub {Γ' = ε} σ = tt
@@ -30,7 +31,7 @@ FSub {Γ' = Γ' ▹ A} (σ , t) = FSub σ , F t
 
 FSub≡ (CT.var here) σ = refl
 FSub≡ (CT.var (drop x)) (σ , t) = FSub≡ (CT.var x) σ
-FSub≡ (CT.coh ps τ' σ') σ = CC.[∘] (CC.PSTm ps) (FSub σ') (FSub σ) ∙ cong (λ σ → CC.PSTm ps CC.[ σ ]) (FSub∘ σ' σ)
+FSub≡ (CT.coh ps τ' σ') σ = CC.[∘] (CCPS.PSTm ps) (FSub σ') (FSub σ) ∙ cong (λ σ → CCPS.PSTm ps CC.[ σ ]) (FSub∘ σ' σ)
 
 F∼Sub {Γ' = ε} p = tt
 F∼Sub {Γ' = Γ' ▹ A} (p , q) = F∼Sub p , F∼ q
