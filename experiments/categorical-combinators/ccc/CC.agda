@@ -32,6 +32,8 @@ data _∼_ {n : ℕ} {Γ : Con n} : {A : Arr n} → Tm Γ A → Tm Γ A → Type
   assoc : {A B C D : Ty n} (f : Tm Γ (A , B)) (g : Tm Γ (B , C)) (h : Tm Γ (C , D)) → (f · g) · h ∼ f · (g · h)
   ∼· : {A B C : Ty n} {f f' : Tm Γ (A , B)} {g g' : Tm Γ (B , C)} → f ∼ f' → g ∼ g' → f · g ∼ f' · g'
   ∼pair : {X A B : Ty n} {f f' : Tm Γ (X , A)} {g g' : Tm Γ (X , B)} → f ∼ f' → g ∼ g' → pair f g ∼ pair f' g'
+  ∼curry : {A B C : Ty n} {f f' : Tm Γ (A × B , C)} → f ∼ f' → curry f ∼ curry f'
+  ∼uncurry : {A B C : Ty n} {f f' : Tm Γ (A , B ⇒ C)} → f ∼ f' → uncurry f ∼ uncurry f'
   ∼refl : {A : Arr n} {f : Tm Γ A} → f ∼ f
   ∼sym  : {A : Arr n} {f g : Tm Γ A} → f ∼ g → g ∼ f
   ∼trans : {A : Arr n} {f g h : Tm Γ A} → f ∼ g → g ∼ h → f ∼ h
@@ -60,8 +62,8 @@ term [ σ ] = term
 pair f g [ σ ] = pair (f [ σ ]) (g [ σ ])
 fst [ σ ] = fst
 snd [ σ ] = snd
-curry t [ σ ] = {!!}
-uncurry t [ σ ] = {!!}
+curry t [ σ ] = curry (t [ σ ])
+uncurry t [ σ ] = uncurry (t [ σ ])
 
 -- Equivalence of substitutions
 _∼Sub_ : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {τ : SubTy n n'} (σ σ' : Sub τ Γ Γ') → Type
@@ -76,30 +78,34 @@ _∼Sub_ {Γ' = Γ' ▹ A} (σ , t) (σ' , t') = (σ ∼Sub σ') ∧ (t ∼ t')
 ∼SubSym {Γ' = ε} tt = tt
 ∼SubSym {Γ' = Γ' ▹ A} (p , q) = ∼SubSym p , ∼sym q
 
+-- Applying equivalent substitutions to a term gives equivalent results
+-- (recursion on the term, so that _[_]∼ below can recurse on the proof)
+[]∼ : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A : Arr n'} (t : Tm Γ' A) {τ : SubTy n n'} {σ σ' : Sub τ Γ Γ'} → σ ∼Sub σ' → t [ σ ] ∼ t [ σ' ]
+[]∼ (var here) (σ , p) = p
+[]∼ (var (drop x)) (σ , p) = []∼ (var x) σ
+[]∼ id p = ∼refl
+[]∼ (f · g) p = ∼· ([]∼ f p) ([]∼ g p)
+[]∼ term p = ∼refl
+[]∼ (pair f g) p = ∼pair ([]∼ f p) ([]∼ g p)
+[]∼ fst p = ∼refl
+[]∼ snd p = ∼refl
+[]∼ (curry t) p = ∼curry ([]∼ t p)
+[]∼ (uncurry t) p = ∼uncurry ([]∼ t p)
+
 _[_]∼ : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A : Arr n'} {t u : Tm Γ' A} {τ : SubTy n n'} {σ σ' : Sub τ Γ Γ'} → t ∼ u → σ ∼Sub σ' → t [ σ ] ∼ u [ σ' ]
-pfst f g [ q ]∼ = ∼trans (pfst (f [ _ ]) (g [ _ ])) (∼refl {f = f} [ q ]∼)
-psnd f g [ q ]∼ = ∼trans (psnd (f [ _ ]) (g [ _ ])) (∼refl {f = g} [ q ]∼)
-pnat f g h [ q ]∼ = ∼trans (pnat (f [ _ ]) (g [ _ ]) (h [ _ ])) (∼pair (∼· (∼refl {f = f} [ q ]∼) (∼refl {f = g} [ q ]∼)) (∼· (∼refl {f = f} [ q ]∼) (∼refl {f = h} [ q ]∼)))
+pfst f g [ q ]∼ = ∼trans (pfst (f [ _ ]) (g [ _ ])) ([]∼ f q)
+psnd f g [ q ]∼ = ∼trans (psnd (f [ _ ]) (g [ _ ])) ([]∼ g q)
+pnat f g h [ q ]∼ = ∼trans (pnat (f [ _ ]) (g [ _ ]) (h [ _ ])) (∼pair (∼· ([]∼ f q) ([]∼ g q)) (∼· ([]∼ f q) ([]∼ h q)))
 pext [ q ]∼ = pext
 text f [ q ]∼ = text (f [ _ ])
-unitl f [ q ]∼ = ∼trans (unitl (f [ _ ])) (∼refl {f = f} [ q ]∼)
-unitr f [ q ]∼ = ∼trans (unitr (f [ _ ])) (∼refl {f = f} [ q ]∼)
-assoc f g h [ q ]∼ = ∼trans (assoc (f [ _ ]) (g [ _ ]) (h [ _ ])) (∼· (∼refl {f = f} [ q ]∼) (∼· (∼refl {f = g} [ q ]∼) (∼refl {f = h} [ q ]∼)))
+unitl f [ q ]∼ = ∼trans (unitl (f [ _ ])) ([]∼ f q)
+unitr f [ q ]∼ = ∼trans (unitr (f [ _ ])) ([]∼ f q)
+assoc f g h [ q ]∼ = ∼trans (assoc (f [ _ ]) (g [ _ ]) (h [ _ ])) (∼· ([]∼ f q) (∼· ([]∼ g q) ([]∼ h q)))
 ∼· p p' [ q ]∼ = ∼· (p [ q ]∼) (p' [ q ]∼)
 ∼pair p p' [ q ]∼ = ∼pair (p [ q ]∼) (p' [ q ]∼)
-∼refl {f = f} [ q ]∼ = lem f q
-  where
-  lem : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A : Arr n'} (t : Tm Γ' A) {τ : SubTy n n'} {σ σ' : Sub τ Γ Γ'} → σ ∼Sub σ' → t [ σ ] ∼ t [ σ' ]
-  lem (var here) (σ , p) = p
-  lem (var (drop x)) (σ , p) = lem (var x) σ
-  lem id p = ∼refl
-  lem (f · g) p = ∼· (∼refl {f = f} [ p ]∼) (∼refl {f = g} [ p ]∼)
-  lem term p = ∼refl
-  lem (pair f g) p = ∼pair (∼refl {f = f} [ p ]∼) (∼refl {f = g} [ p ]∼)
-  lem fst p = ∼refl
-  lem snd p = ∼refl
-  lem (curry t) = {!!}
-  lem (uncurry t) = {!!}
+∼curry p [ q ]∼ = ∼curry (p [ q ]∼)
+∼uncurry p [ q ]∼ = ∼uncurry (p [ q ]∼)
+∼refl {f = f} [ q ]∼ = []∼ f q
 ∼sym p [ q ]∼ = ∼sym (p [ ∼SubSym q ]∼)
 ∼trans p p' [ q ]∼ = ∼trans (p [ q ]∼) (p' [ ∼SubRefl _ ]∼)
 
@@ -118,5 +124,5 @@ _∘_ {Γ'' = Γ'' ▹ A} (σ' , t') σ = (σ' ∘ σ) , (t' [ σ ])
 [∘] (pair f g) σ' σ = cong₂ pair ([∘] f σ' σ) ([∘] g σ' σ)
 [∘] fst σ' σ = refl
 [∘] snd σ' σ = refl
-[∘] (curry t) σ' σ = {!!}
-[∘] (uncurry t) σ' σ = {!!}
+[∘] (curry t) σ' σ = cong curry ([∘] t σ' σ)
+[∘] (uncurry t) σ' σ = cong uncurry ([∘] t σ' σ)
