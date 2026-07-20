@@ -36,11 +36,6 @@ data _∼_ {n : ℕ} {Γ : Con n} : {A : Arr n} → Tm Γ A → Tm Γ A → Type
   ∼sym  : {A : Arr n} {f g : Tm Γ A} → f ∼ g → g ∼ f
   ∼trans : {A : Arr n} {f g h : Tm Γ A} → f ∼ g → g ∼ h → f ∼ h
 
-postulate
-  -- TODO: we do not formalize pasting schemes for now and simply assume that pasting schemes are contractible
-  PSTm : {n : ℕ} {Γ : Con n} {A : Arr n} → PS Γ A → Tm Γ A
-  PSEq : {n : ℕ} {Γ : Con n} {A : Arr n} (ps : PS Γ A) (t u : Tm Γ A) → t ∼ u
-
 -- Substitutions
 Sub : {n n' : ℕ} (τ : SubTy n n') (Γ : Con n) (Γ' : Con n') → Type
 Sub _ Γ ε = Unit
@@ -124,3 +119,8 @@ _∘_ {Γ'' = Γ'' ▹ A} (σ' , t') σ = (σ' ∘ σ) , (t' [ σ ])
 [∘] snd σ' σ = refl
 [∘] (abs t) σ' σ = cong abs ([∘] t σ' σ)
 [∘] app σ' σ = refl
+
+postulate
+  -- TODO: we do not formalize pasting schemes for now and simply assume that pasting schemes are contractible
+  PSTm : {n : ℕ} {Γ : Con n} {A : Arr n} → PS Γ A → Tm Γ A
+  PSEq : {n : ℕ} {Γ : Con n} {A : Arr n} (ps : PS Γ A) (t u : Tm Γ A) → t ∼ u

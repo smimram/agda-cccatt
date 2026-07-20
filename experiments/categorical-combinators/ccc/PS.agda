@@ -77,7 +77,7 @@ tgtVar : {n : ℕ} {Γ Δ : Con n} {x : Fin n} → PStgtCon Γ x Δ → Σ[ A �
 tgtVar (tgt-here _ _ _) = _ , here
 tgtVar (tgt-drop t _) = _ , drop (proj₂ (tgtVar t))
 
---- Examples: the pasting schemes postulated in Ty.agda
+--- Examples
 
 -- ⊢ X ⇒ X
 PS⊢X⇒X' : PS {n = 1} ε (X (# 0) ⇒ X (# 0))
