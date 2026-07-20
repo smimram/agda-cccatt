@@ -125,8 +125,7 @@ PSX⇒Y,X⇒Z⊢X⇒Z = ps-abs ps-Z
 PSX⇒1⊢X⇒1 : PS {n = 1} (ε ▹ (X (# 0) , 𝟙)) (X (# 0) ⇒ 𝟙)
 PSX⇒1⊢X⇒1 = ps-abs ps-term
 
--- ⊢ X ⇒ Y ⇒ X : the K combinator, commented out in Ty.agda but a pasting
--- scheme indeed: Y is produced but never demanded, which is harmless
+-- ⊢ X ⇒ Y ⇒ X : the K combinator: Y is produced but never demanded, which is harmless
 PS⊢X⇒Y⇒X : PS {n = 2} ε (X (# 0) ⇒ X (# 1) ⇒ X (# 0))
 PS⊢X⇒Y⇒X = ps-abs (ps-abs (ps-neu (tgt-drop (tgt-here no-ε ps-term tgt-X) (no-X λ ()))))
 
