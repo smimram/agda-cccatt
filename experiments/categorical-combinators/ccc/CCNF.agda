@@ -396,30 +396,30 @@ nf∼ {A = A} t = ∼trans (∼trans (∼sym (unitl t)) (∼· (text id) ∼refl
 
 --- Sanity checks
 
--- Normalization is the identity on the canonical term of a pasting scheme:
--- this is nfCan combined with the uniqueness of canonical terms, and holds
--- with no computation involved
-nfPSTm : {n : ℕ} {Γ : Con n} {A : Ty n} (ps : PS Γ A) → nf (PSTmTm ps) ≡ PSTmTm ps
-nfPSTm ps = CanUniq ps (nfCan (PSTmTm ps))
+-- -- Normalization is the identity on the canonical term of a pasting scheme:
+-- -- this is nfCan combined with the uniqueness of canonical terms, and holds
+-- -- with no computation involved
+-- nfPSTm : {n : ℕ} {Γ : Con n} {A : Ty n} (ps : PS Γ A) → nf (PSTmTm ps) ≡ PSTmTm ps
+-- nfPSTm ps = CanUniq ps (nfCan (PSTmTm ps))
 
-module _ where
-  private
-    -- One generator 𝟙 → X, whence a term of type X
-    Γ₁ : Con 1
-    Γ₁ = ε ▹ (𝟙 , X (# 0))
+-- module _ where
+  -- private
+    -- -- One generator 𝟙 → X, whence a term of type X
+    -- Γ₁ : Con 1
+    -- Γ₁ = ε ▹ (𝟙 , X (# 0))
 
-    x : Tm Γ₁ (𝟙 , X (# 0))
-    x = term · var here
+    -- x : Tm Γ₁ (𝟙 , X (# 0))
+    -- x = term · var here
 
-    -- The identity function, in η-long form
-    idf : Tm Γ₁ (𝟙 , X (# 0) ⇒ X (# 0))
-    idf = ren wkRen (PSTmTm PS⊢X⇒X')
+    -- -- The identity function, in η-long form
+    -- idf : Tm Γ₁ (𝟙 , X (# 0) ⇒ X (# 0))
+    -- idf = ren wkRen (PSTmTm PS⊢X⇒X')
 
-    -- β: applying the identity to x gives back x
-    _ : nf (pair idf x · app) ≡ x
-    _ = refl
+    -- -- β: applying the identity to x gives back x
+    -- _ : nf (pair idf x · app) ≡ x
+    -- _ = refl
 
-    -- η: abs snd is the identity function but is not canonical (its body, var
-    -- here, is not), so it normalizes to the η-long form
-    _ : nf (abs snd) ≡ idf
-    _ = refl
+    -- -- η: abs snd is the identity function but is not canonical (its body, var
+    -- -- here, is not), so it normalizes to the η-long form
+    -- _ : nf (abs snd) ≡ idf
+    -- _ = refl

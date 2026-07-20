@@ -6,6 +6,7 @@ open import Data.Fin using (Fin ; zero ; suc ; #_) public
 open import Data.Vec using (Vec ; [] ; _∷_ ; lookup ; map) public
 open import Data.Vec.Properties using (lookup-map) public
 open import Data.Unit hiding (_≟_) renaming (⊤ to Unit) public
+open import Data.Empty using (⊥ ; ⊥-elim) public
 open import Data.Product hiding (map ; curry ; uncurry) renaming (_×_ to _∧_) public
 open import Data.Product.Properties public
 
