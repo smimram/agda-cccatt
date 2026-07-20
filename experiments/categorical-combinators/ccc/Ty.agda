@@ -106,30 +106,30 @@ data _∈_ {n : ℕ} (A : Arr n) : Con n → Set where
   here : {Γ : Con n} → A ∈ (Γ ▹ A)
   drop : {Γ : Con n} {B : Arr n} → A ∈ Γ → A ∈ (Γ ▹ B)
 
-postulate
-  -- TODO: we do not formalize pasting schemes for now and simply assume that the necessary types are pasting
-  PS : {n : ℕ} (Γ : Con n) (A : Arr n) → Set
+-- postulate
+  -- -- TODO: we do not formalize pasting schemes for now and simply assume that the necessary types are pasting
+  -- PS : {n : ℕ} (Γ : Con n) (A : Arr n) → Set
 
-  PS⊢X⇒X : PS {n = 1} ε (X (# 0) , X (# 0))
-  PSX⇒Y,Y⇒Z⊢X⇒Z : PS {n = 3} (ε ▹ ((X (# 0)) , (X (# 1))) ▹ (X (# 1) , X (# 2))) (X (# 0) , X (# 2))
-  PSX⇒Y⊢X⇒Y : PS {n = 2} (ε ▹ (X (# 0) , X (# 1))) (X (# 0) , X (# 1))
+  -- PS⊢X⇒X : PS {n = 1} ε (X (# 0) , X (# 0))
+  -- PSX⇒Y,Y⇒Z⊢X⇒Z : PS {n = 3} (ε ▹ ((X (# 0)) , (X (# 1))) ▹ (X (# 1) , X (# 2))) (X (# 0) , X (# 2))
+  -- PSX⇒Y⊢X⇒Y : PS {n = 2} (ε ▹ (X (# 0) , X (# 1))) (X (# 0) , X (# 1))
 
-  PS⊢X⇒1 : PS {n = 1} ε (X (# 0) , 𝟙)
-  PSX⇒1⊢X⇒1 : PS {n = 1} (ε ▹ (X (# 0) , 𝟙)) (X (# 0) , 𝟙)
-  PS⊢X×Y⇒X : PS {n = 2} ε ((X (# 0) × X (# 1)) , X (# 0))
-  PS⊢X×Y⇒Y : PS {n = 2} ε ((X (# 0) × X (# 1)) , X (# 1))
-  PS⊢X×Y⇒X×Y : PS {n = 2} ε ((X (# 0) × X (# 1)) , X (# 0) × X (# 1))
-  PSX⇒Y,X⇒Z⊢X⇒Y×Z : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 0) , X (# 2))) (X (# 0) , X (# 1) × X (# 2))
-  PSX⇒Y,X⇒Z⊢X⇒Y : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 0) , X (# 2))) (X (# 0) , X (# 1))
-  PSX⇒Y,X⇒Z⊢X⇒Z : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 0) , X (# 2))) (X (# 0) , X (# 2))
+  -- PS⊢X⇒1 : PS {n = 1} ε (X (# 0) , 𝟙)
+  -- PSX⇒1⊢X⇒1 : PS {n = 1} (ε ▹ (X (# 0) , 𝟙)) (X (# 0) , 𝟙)
+  -- PS⊢X×Y⇒X : PS {n = 2} ε ((X (# 0) × X (# 1)) , X (# 0))
+  -- PS⊢X×Y⇒Y : PS {n = 2} ε ((X (# 0) × X (# 1)) , X (# 1))
+  -- PS⊢X×Y⇒X×Y : PS {n = 2} ε ((X (# 0) × X (# 1)) , X (# 0) × X (# 1))
+  -- PSX⇒Y,X⇒Z⊢X⇒Y×Z : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 0) , X (# 2))) (X (# 0) , X (# 1) × X (# 2))
+  -- PSX⇒Y,X⇒Z⊢X⇒Y : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 0) , X (# 2))) (X (# 0) , X (# 1))
+  -- PSX⇒Y,X⇒Z⊢X⇒Z : PS {n = 3} (ε ▹ (X (# 0) , X (# 1)) ▹ (X (# 0) , X (# 2))) (X (# 0) , X (# 2))
 
-  -- PS⊢X⇒Y⇒X : PS {n = 2} ε (X (# 0) ⇒ X (# 1) ⇒ X (# 0))
-  -- PS⊢[X⇒Y⇒Z]⇒[X⇒Y]⇒X⇒Z : PS {n = 3} ε ((X (# 0) ⇒ X (# 1) ⇒ X (# 2)) ⇒ (X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 2))
-  -- PSX⊢X : PS {n = 1} (ε ▹ X (# 0)) (X (# 0))
-  -- PSX,Y⊢X : PS {n = 2} (ε ▹ X (# 0) ▹ X (# 1)) (X (# 0))
-  -- PSX⇒Y⇒Z,X⇒Y,X⊢Z : PS {n = 3} (ε ▹ (X (# 0) ⇒ X (# 1) ⇒ X (# 2)) ▹ (X (# 0) ⇒ X (# 1)) ▹ X (# 0)) (X (# 2))
-  -- PSX⇒Y,X⊢Y : PS {n = 2} (ε ▹ (X (# 0) ⇒ X (# 1)) ▹ X (# 0)) (X (# 1))
-  -- PS⊢[X⇒Y]⇒X⇒Y : PS {n = 2} ε ((X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 1))
-  -- PS⊢[X⇒Z]⇒[X⇒Y]⇒[X⇒Z] : PS {n = 3} ε ((X (# 0) ⇒ X (# 2)) ⇒ (X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 2))
-  -- PS⊢[X⇒Z]⇒X⇒Y⇒Z : PS {n = 3} ε ((X (# 0) ⇒ X (# 2)) ⇒ X (# 0) ⇒ X (# 1) ⇒ X (# 2))
-  -- PS⊢[X⇒Y⇒Z⇒W]⇒[X⇒Y⇒Z]⇒[X⇒Y]⇒X⇒W : PS {n = 4} ε ((X (# 0) ⇒ X (# 1) ⇒ X (# 2) ⇒ X (# 3)) ⇒ (X (# 0) ⇒ X (# 1) ⇒ X (# 2)) ⇒ (X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 3))
+  -- -- PS⊢X⇒Y⇒X : PS {n = 2} ε (X (# 0) ⇒ X (# 1) ⇒ X (# 0))
+  -- -- PS⊢[X⇒Y⇒Z]⇒[X⇒Y]⇒X⇒Z : PS {n = 3} ε ((X (# 0) ⇒ X (# 1) ⇒ X (# 2)) ⇒ (X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 2))
+  -- -- PSX⊢X : PS {n = 1} (ε ▹ X (# 0)) (X (# 0))
+  -- -- PSX,Y⊢X : PS {n = 2} (ε ▹ X (# 0) ▹ X (# 1)) (X (# 0))
+  -- -- -- PSX⇒Y⇒Z,X⇒Y,X⊢Z : PS {n = 3} (ε ▹ (X (# 0) ⇒ X (# 1) ⇒ X (# 2)) ▹ (X (# 0) ⇒ X (# 1)) ▹ X (# 0)) (X (# 2))
+  -- -- PSX⇒Y,X⊢Y : PS {n = 2} (ε ▹ (X (# 0) ⇒ X (# 1)) ▹ X (# 0)) (X (# 1))
+  -- -- PS⊢[X⇒Y]⇒X⇒Y : PS {n = 2} ε ((X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 1))
+  -- -- PS⊢[X⇒Z]⇒[X⇒Y]⇒[X⇒Z] : PS {n = 3} ε ((X (# 0) ⇒ X (# 2)) ⇒ (X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 2))
+  -- -- PS⊢[X⇒Z]⇒X⇒Y⇒Z : PS {n = 3} ε ((X (# 0) ⇒ X (# 2)) ⇒ X (# 0) ⇒ X (# 1) ⇒ X (# 2))
+  -- -- PS⊢[X⇒Y⇒Z⇒W]⇒[X⇒Y⇒Z]⇒[X⇒Y]⇒X⇒W : PS {n = 4} ε ((X (# 0) ⇒ X (# 1) ⇒ X (# 2) ⇒ X (# 3)) ⇒ (X (# 0) ⇒ X (# 1) ⇒ X (# 2)) ⇒ (X (# 0) ⇒ X (# 1)) ⇒ X (# 0) ⇒ X (# 3))

@@ -3,6 +3,7 @@
 
 open import Prelude
 open import Ty
+open import PS
 
 infixl 6 _·_
 
@@ -120,7 +121,51 @@ _∘_ {Γ'' = Γ'' ▹ A} (σ' , t') σ = (σ' ∘ σ) , (t' [ σ ])
 [∘] (abs t) σ' σ = cong abs ([∘] t σ' σ)
 [∘] app σ' σ = refl
 
+
+
+
+
+
+
+
+
+
+
+
+
+-- Bind the last variable of the context
+close : {n : ℕ} {Γ : Con n} {A B C : Ty n} → Tm (Γ ▹ (𝟙 , A)) (B , C) → Tm Γ (B × A , C)
+close (var here) = snd
+close (var (drop x)) = fst · var x
+close id = fst
+close (f · g) = pair (close f) snd · close g
+close term = term
+close (pair f g) = pair (close f) (close g)
+close fst = fst · fst
+close snd = fst · snd
+close (abs t) = abs (pair (pair (fst · fst) snd) (fst · snd) · close t)
+close app = fst · app
+
+-- NOTE: we could extend neutral terms to have A as source instead of 𝟙. However, the PS condition would be more difficult to formulate because we can look up stuff both in the context and in the source.
+
+-- Canonical terms: in βη-long form
+data canonical {n : ℕ} : {Γ : Con n} {A : Ty n} (t : Tm Γ (𝟙 , A)) → Type
+-- Neutral terms
+data neutral {n : ℕ} : {Γ : Con n} {A : Ty n} (t : Tm Γ (𝟙 , A)) → Type
+
+data canonical {n} where
+  can-pair : {Γ : Con n} {A B : Ty n} {tl : Tm Γ (𝟙 , A)} {tr : Tm Γ (𝟙 , B)} → canonical tl → canonical tr → canonical {A = A × B} (pair tl tr)
+  can-term : {Γ : Con n} → canonical {Γ = Γ} {A = 𝟙} term
+  can-abs : {Γ : Con n} {A B : Ty n} {t : Tm (Γ ▹ (𝟙 , A)) (𝟙 , B)} → canonical t → canonical {A = A ⇒ B} (abs (close t))
+  can-neu : {Γ : Con n} {x : Fin n} {t : Tm Γ (𝟙 , X x)} → neutral t → canonical {A = X x} t
+
+data neutral {n} where
+  neu-var : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A)} → canonical t → (x : (A , B) ∈ Γ) → neutral (t · var x)
+  neu-app : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A ⇒ B)} {u : Tm Γ (𝟙 , A)} → neutral t → canonical u → neutral (pair t u · app)
+  neu-fst : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A × B)} → neutral t → neutral (t · fst)
+  neu-snd : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A × B)} → neutral t → neutral (t · snd)
+
 postulate
   -- TODO: we do not formalize pasting schemes for now and simply assume that pasting schemes are contractible
-  PSTm : {n : ℕ} {Γ : Con n} {A : Arr n} → PS Γ A → Tm Γ A
-  PSEq : {n : ℕ} {Γ : Con n} {A : Arr n} (ps : PS Γ A) (t u : Tm Γ A) → t ∼ u
+  PSTm : {n : ℕ} {Γ : Con n} {A : Ty n} → PS Γ A → Tm Γ (𝟙 , A)
+  -- PSEq : {n : ℕ} {Γ : Con n} {A : Arr n} (ps : PS Γ A) (t u : Tm Γ A) → t ∼ u
