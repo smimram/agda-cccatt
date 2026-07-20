@@ -55,3 +55,27 @@ data _∼_ {n : ℕ} {Γ : Con n} : {A : Ty n} → Tm Γ A → Tm Γ A → Type 
   ∼refl : {A : Ty n} {t : Tm Γ A} → t ∼ t
   ∼sym : {A : Ty n} {t u : Tm Γ A} → t ∼ u → u ∼ t
   ∼trans : {A : Ty n} {t u v : Tm Γ A} → t ∼ u → u ∼ v → t ∼ v
+
+-- Equational reasoning for ∼
+
+module ∼-Reasoning {n : ℕ} {Γ : Con n} where
+
+  infix  1 begin∼_
+  infixr 2 _∼⟨_⟩_ _∼⟨_⟨_ _∼⟨⟩_
+  infix  3 _∎∼
+
+  begin∼_ : {A : Ty n} {t u : Tm Γ A} → t ∼ u → t ∼ u
+  begin∼ p = p
+
+  _∼⟨_⟩_ : {A : Ty n} (t : Tm Γ A) {u v : Tm Γ A} → t ∼ u → u ∼ v → t ∼ v
+  _ ∼⟨ p ⟩ q = ∼trans p q
+
+  -- same, with the step used backwards
+  _∼⟨_⟨_ : {A : Ty n} (t : Tm Γ A) {u v : Tm Γ A} → u ∼ t → u ∼ v → t ∼ v
+  _ ∼⟨ p ⟨ q = ∼trans (∼sym p) q
+
+  _∼⟨⟩_ : {A : Ty n} (t : Tm Γ A) {u : Tm Γ A} → t ∼ u → t ∼ u
+  _ ∼⟨⟩ p = p
+
+  _∎∼ : {A : Ty n} (t : Tm Γ A) → t ∼ t
+  _ ∎∼ = ∼refl
