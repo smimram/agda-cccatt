@@ -161,12 +161,6 @@ eqs' ps t τ p = eq ps t t τ p
 _∼Sub_ {Γ' = ε} σ σ' = Unit
 _∼Sub_ {Γ = Γ} {Γ' = Γ' ▹ A} (σ , t) (σ' , t') = (_∼Sub_ {Γ = Γ} σ σ') ∧ t ∼ t'
 
--- ∼ap : {n : ℕ} {Γ : Con n} {A B : Ty n} {t t' : Tm Γ (A ⇒ B)} {u u' : Tm Γ A} → t ∼ t' → u ∼ u' → ap t u ∼ ap t' u'
--- ∼ap {n} {Γ} {A} {B} p q = eq PSX⇒Y,X⊢Y v v (SubTy2 A B) ((tt , p) , q)
-  -- where
-  -- v : Tm {n = 2} (ε ▹ (X (# 0) ⇒ X (# 1)) ▹ X (# 0)) (X (# 1))
-  -- v = ap (var (drop here)) (var here)
-
 ∼SubRefl {Γ' = ε} tt = tt
 ∼SubRefl {Γ' = Γ' ▹ A} (σ , t) = ∼SubRefl σ , ∼refl t
 
