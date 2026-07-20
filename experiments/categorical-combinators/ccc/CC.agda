@@ -166,11 +166,7 @@ data neutral {n} where
   neu-fst : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A × B)} → neutral t → neutral (t · fst)
   neu-snd : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A × B)} → neutral t → neutral (t · snd)
 
--- postulate
-  -- nf : {n : ℕ} {Γ : Con n} {A : Ty n} → Tm Γ (𝟙 , A) → Tm Γ (𝟙 , A)
-  -- nf∼ : {n : ℕ} {Γ : Con n} {A : Ty n} (t : Tm Γ (𝟙 , A)) → t ∼ nf t
-  -- nfCan : {n : ℕ} {Γ : Con n} {A : Ty n} (t : Tm Γ (𝟙 , A)) → canonical (nf t)
-
+-- Normalization (every term is equivalent to a canonical one) is in NF.agda
 
 -- Every pasting scheme has a canonical term (the existence half of
 -- contractibility): the grammar of PS mirrors the one of canonical terms. The
