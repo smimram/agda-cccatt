@@ -165,7 +165,25 @@ data neutral {n} where
   neu-fst : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A × B)} → neutral t → neutral (t · fst)
   neu-snd : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A × B)} → neutral t → neutral (t · snd)
 
-postulate
-  -- TODO: we do not formalize pasting schemes for now and simply assume that pasting schemes are contractible
-  PSTm : {n : ℕ} {Γ : Con n} {A : Ty n} → PS Γ A → Tm Γ (𝟙 , A)
-  -- PSEq : {n : ℕ} {Γ : Con n} {A : Arr n} (ps : PS Γ A) (t u : Tm Γ A) → t ∼ u
+-- Every pasting scheme has a canonical term (the existence half of contractibility): the grammar of PS mirrors the one of canonical terms
+PSTm' : {n : ℕ} {Γ : Con n} {A : Ty n} → PS Γ A → Σ (Tm Γ (𝟙 , A)) canonical
+-- A target occurrence tells how to project a neutral term down to X x
+PSTgt : {n : ℕ} {Γ : Con n} {x : Fin n} {B : Ty n} → PStgt Γ x B → (t : Tm Γ (𝟙 , B)) → neutral t → Σ (Tm Γ (𝟙 , X x)) neutral
+-- Δ is a prefix of the ambient context Γ, whence the inclusion of variables
+PSTgtCon : {n : ℕ} {Γ Δ : Con n} {x : Fin n} → PStgtCon Γ x Δ → ({A : Arr n} → A ∈ Δ → A ∈ Γ) → Σ (Tm Γ (𝟙 , X x)) neutral
+
+PSTm' (ps-pair p q) = let (t , ct) = PSTm' p ; (u , cu) = PSTm' q in pair t u , can-pair ct cu
+PSTm' ps-term = term , can-term
+PSTm' (ps-abs p) = let (t , ct) = PSTm' p in abs (close t) , can-abs ct
+PSTm' (ps-neu p) = let (t , nt) = PSTgtCon p (λ i → i) in t , can-neu nt
+
+PSTgt tgt-X t nt = t , nt
+PSTgt (tgt-l p _) t nt = PSTgt p (t · fst) (neu-fst nt)
+PSTgt (tgt-r _ p) t nt = PSTgt p (t · snd) (neu-snd nt)
+PSTgt (tgt-⇒ a p) t nt = let (u , cu) = PSTm' a in PSTgt p (pair t u · app) (neu-app nt cu)
+
+PSTgtCon (tgt-here _ a p) incl = let (u , cu) = PSTm' a in PSTgt p (u · var (incl here)) (neu-var cu (incl here))
+PSTgtCon (tgt-drop p _) incl = PSTgtCon p (λ i → incl (drop i))
+
+-- TODO: uniqueness of the term of a pasting scheme
+-- PSEq : {n : ℕ} {Γ : Con n} {A : Arr n} (ps : PS Γ A) (t u : Tm Γ A) → t ∼ u
