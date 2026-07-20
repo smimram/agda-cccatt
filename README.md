@@ -8,8 +8,8 @@ This is the formalization associated to the paper [_An unbiased simply typed com
 
 There are two variants where the second calculus is either
 
-- [combinatory logic](combinatory-logic)
-- [categorical combinators](categorical-combinators)
+- [combinatory logic](combinatory-logic) or
+- [categorical combinators](categorical-combinators).
 
 The first one follows more closely the paper but lacks the formalization of pasting schemes (which are simply postulated in [Ty.agda](combinators/Ty.agda)). The second one has no postulate.
 
