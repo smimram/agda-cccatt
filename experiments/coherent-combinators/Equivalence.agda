@@ -16,26 +16,26 @@ open CL using (_$_ ; I ; K ; S ; P₁ ; P₂ ; P ; T)
 
 --- From CL to CC
 
-F : {n : ℕ} {Γ : Con n} {A : Ty n} → CL.Tm Γ A → CC.Tm Γ (𝟙 ⇒ A)
-F = ?
+F : {n : ℕ} {Γ : Con' n} {A : Ty n} → CL.Tm Γ A → CC.Tm {!!} (𝟙 , A)
+F = {!!}
 
 --- From CC to CL
 
-G : {n : ℕ} {Γ : Con n} {A : Ty n} → CC.Tm Γ A → CL.Tm Γ A
-G = ?
+G : {n : ℕ} {Γ : Con n} {A B : Ty n} → CC.Tm Γ (A , B) → CL.Tm {!!} (A ⇒ B)
+G = {!!}
 
---- The translations preserve the equivalences
+-- --- The translations preserve the equivalences
 
-F∼ : {n : ℕ} {Γ : Con n} {A : Ty n} {t u : CL.Tm Γ A} → t CL.∼ u → F t CC.∼ F u
-F∼ = {!!}
+-- F∼ : {n : ℕ} {Γ : Con n} {A : Ty n} {t u : CL.Tm Γ A} → t CL.∼ u → F t CC.∼ F u
+-- F∼ = {!!}
 
-G∼ : {n : ℕ} {Γ : Con n} {A : Ty n} {f g : CC.Tm Γ A} → f CC.∼ g → G f CL.∼ G g
-G∼ = {!!}
+-- G∼ : {n : ℕ} {Γ : Con n} {A : Ty n} {f g : CC.Tm Γ A} → f CC.∼ g → G f CL.∼ G g
+-- G∼ = {!!}
 
---- F and G are mutually inverse
+-- --- F and G are mutually inverse
 
-GF : {n : ℕ} {Γ : Con n} {A : Ty n} (t : CL.Tm Γ A) → G• (F t) CL.∼ t
-GF = {!!}
+-- GF : {n : ℕ} {Γ : Con n} {A : Ty n} (t : CL.Tm Γ A) → G (F t) CL.∼ t
+-- GF = {!!}
 
-FG : {n : ℕ} {Γ : Con n} {A : Ty n} (f : CC.Tm Γ (𝟙 ⇒ A)) → F (G• f) CC.∼ f
-FG = {!!}
+-- FG : {n : ℕ} {Γ : Con n} {A : Ty n} (f : CC.Tm Γ (𝟙 ⇒ A)) → F (G f) CC.∼ f
+-- FG = {!!}
