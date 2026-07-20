@@ -2,6 +2,7 @@
 --- see for instance Lambek and Scott p.52
 
 open import Prelude
+open import Data.Empty using (⊥ ; ⊥-elim)
 open import Ty
 open import PS
 
@@ -185,5 +186,9 @@ PSTgt (tgt-⇒ a p) t nt = let (u , cu) = PSTm' a in PSTgt p (pair t u · app) (
 PSTgtCon (tgt-here _ a p) incl = let (u , cu) = PSTm' a in PSTgt p (u · var (incl here)) (neu-var cu (incl here))
 PSTgtCon (tgt-drop p _) incl = PSTgtCon p (λ i → incl (drop i))
 
--- TODO: uniqueness of the term of a pasting scheme
--- PSEq : {n : ℕ} {Γ : Con n} {A : Arr n} (ps : PS Γ A) (t u : Tm Γ A) → t ∼ u
+-- In a pasting scheme, there exists a term (with any source)
+PSTm : {n : ℕ} {Γ : Con n} {A B : Ty n} → PS Γ B → Tm Γ (A , B)
+PSTm p = term · proj₁ (PSTm' p)
+
+postulate
+  PSCanEq : {n : ℕ} {Γ : Con n} {A : Ty n} (ps : PS Γ A) {t u : Tm Γ (𝟙 , A)} → canonical t → canonical u → t ∼ u
