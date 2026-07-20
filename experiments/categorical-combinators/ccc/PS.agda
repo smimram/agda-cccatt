@@ -3,10 +3,30 @@ open import Data.List
 open import Ty hiding (PS)
 open import CC
 
+-- Bind the last variable of the context
+close : {n : ℕ} {Γ : Con n} {A B C : Ty n} → Tm (Γ ▹ (𝟙 , A)) (B , C) → Tm Γ (B × A , C)
+close (var here) = snd
+close (var (drop x)) = fst · var x
+close id = fst
+close (f · g) = pair (close f) snd · close g
+close term = term
+close (pair f g) = pair (close f) (close g)
+close fst = fst · fst
+close snd = fst · snd
+close (abs t) = abs (pair (pair (fst · fst) snd) (fst · snd) · close t)
+close app = fst · app
+
+-- Normalized presence in contexts (we expand wrt products)
+data _∈'_ {n : ℕ} (A : Arr n) : Con n → Set where
+  -- here : {Γ : Con n} → A ∈ (Γ ▹ A)
+  -- drop : {Γ : Con n} {B : Arr n} → A ∈ Γ → A ∈ (Γ ▹ B)
+
 -- Canonical terms: in βη-long form
-data canonical {n : ℕ} : {Γ : Con n} {A : Arr n} (t : Tm Γ A) → Type where
-  can-hom : {Γ : Con n} {A B : Ty n} (t : Tm Γ (𝟙 , A ⇒ B)) → canonical t → canonical {A = A , B} {!!}
-  
+data canonical {n : ℕ} : {Γ : Con n} {A : Ty n} (t : Tm Γ (𝟙 , A)) → Type where
+  can-pair : {Γ : Con n} {A B : Ty n} {tl : Tm Γ (𝟙 , A)} {tr : Tm Γ (𝟙 , B)} → canonical tl → canonical tr → canonical {A = A × B} (pair tl tr)
+  can-term : {Γ : Con n} {A : Ty n} → canonical {Γ = Γ} {A = 𝟙} term
+  can-abs : {Γ : Con n} {A B : Ty n} {t : Tm (Γ ▹ (𝟙 , A)) (𝟙 , B)} → canonical t → canonical {A = A ⇒ B} (abs (close t))
+  can-app : {Γ : Con n} {A : Ty n} → {!!} → {!!}
 
   -- var  : {A : Arr n} → A ∈ Γ → Tm Γ A
   -- can-abs : {Γ : Con n} {A B C : Ty n} {t : Tm _ (B , C)} → canonical (Γ ▹ (𝟙 , A)) t → canonical Γ {!!}
