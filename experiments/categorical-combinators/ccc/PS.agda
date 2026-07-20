@@ -16,21 +16,22 @@ close snd = fst · snd
 close (abs t) = abs (pair (pair (fst · fst) snd) (fst · snd) · close t)
 close app = fst · app
 
--- Normalized presence in contexts (we expand wrt products)
-data _∈'_ {n : ℕ} (A : Arr n) : Con n → Set where
-  -- here : {Γ : Con n} → A ∈ (Γ ▹ A)
-  -- drop : {Γ : Con n} {B : Arr n} → A ∈ Γ → A ∈ (Γ ▹ B)
-
 -- Canonical terms: in βη-long form
-data canonical {n : ℕ} : {Γ : Con n} {A : Ty n} (t : Tm Γ (𝟙 , A)) → Type where
-  can-pair : {Γ : Con n} {A B : Ty n} {tl : Tm Γ (𝟙 , A)} {tr : Tm Γ (𝟙 , B)} → canonical tl → canonical tr → canonical {A = A × B} (pair tl tr)
-  can-term : {Γ : Con n} {A : Ty n} → canonical {Γ = Γ} {A = 𝟙} term
-  can-abs : {Γ : Con n} {A B : Ty n} {t : Tm (Γ ▹ (𝟙 , A)) (𝟙 , B)} → canonical t → canonical {A = A ⇒ B} (abs (close t))
-  can-app : {Γ : Con n} {A : Ty n} → {!!} → {!!}
+data canonical {n : ℕ} : {Γ : Con n} {A : Ty n} (t : Tm Γ (𝟙 , A)) → Type
+-- Neutral terms
+data neutral {n : ℕ} : {Γ : Con n} {A : Ty n} (t : Tm Γ (𝟙 , A)) → Type
 
-  -- var  : {A : Arr n} → A ∈ Γ → Tm Γ A
-  -- can-abs : {Γ : Con n} {A B C : Ty n} {t : Tm _ (B , C)} → canonical (Γ ▹ (𝟙 , A)) t → canonical Γ {!!}
-  -- can-pair : {Γ : Con n} {A B C : Ty n} → 
+data canonical {n} where
+  can-pair : {Γ : Con n} {A B : Ty n} {tl : Tm Γ (𝟙 , A)} {tr : Tm Γ (𝟙 , B)} → canonical tl → canonical tr → canonical {A = A × B} (pair tl tr)
+  can-term : {Γ : Con n} → canonical {Γ = Γ} {A = 𝟙} term
+  can-abs : {Γ : Con n} {A B : Ty n} {t : Tm (Γ ▹ (𝟙 , A)) (𝟙 , B)} → canonical t → canonical {A = A ⇒ B} (abs (close t))
+  can-neu : {Γ : Con n} {x : Fin n} {t : Tm Γ (𝟙 , X x)} → neutral t → canonical t
+
+data neutral {n} where
+  neu-var : {Γ : Con n} {A B : Ty n} (x : (A , B) ∈ Γ) {u : Tm Γ (𝟙 , A)} → canonical u → neutral (u · var x)
+  neu-app : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A ⇒ B)} {u : Tm Γ (𝟙 , A)} → neutral t → canonical u → neutral (pair t u · app)
+  neu-fst : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A × B)} → neutral t → neutral (t · fst)
+  neu-snd : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A × B)} → neutral t → neutral (t · snd)
 
 -- A variable does not occur in the target of a type
 hasNoTarget : {n : ℕ} (x : Fin n) (A : Ty n) → Type
