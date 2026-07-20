@@ -5,8 +5,8 @@ open import Ty
 
 infixl 6 _$_
 
-data Tm {n : ℕ} (Γ : Con n) : Ty n → Type where
-  var : {A : Ty n} → A ∈ Γ → Tm Γ A
+data Tm {n : ℕ} (Γ : Con' n) : Ty n → Type where
+  var : {A : Ty n} → A ∈' Γ → Tm Γ A
   I   : {A : Ty n} → Tm Γ (A ⇒ A)
   K   : {A B : Ty n} → Tm Γ (A ⇒ B ⇒ A)
   S   : {A B C : Ty n} → Tm Γ ((A ⇒ B ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ C)
@@ -18,7 +18,7 @@ data Tm {n : ℕ} (Γ : Con n) : Ty n → Type where
 
 infix 5 _∼_
 
-data _∼_ {n : ℕ} {Γ : Con n} : {A : Ty n} → Tm Γ A → Tm Γ A → Type where
+data _∼_ {n : ℕ} {Γ : Con' n} : {A : Ty n} → Tm Γ A → Tm Γ A → Type where
   Iβ : {A : Ty n} (t : Tm Γ A) → I $ t ∼ t
   Kβ : {A B : Ty n} (t : Tm Γ A) (u : Tm Γ B) → K $ t $ u ∼ t
   Sβ : {A B C : Ty n} (t : Tm Γ (A ⇒ B ⇒ C)) (u : Tm Γ (A ⇒ B)) (v : Tm Γ A) → S $ t $ u $ v ∼ t $ v $ (u $ v)
@@ -58,10 +58,10 @@ data _∼_ {n : ℕ} {Γ : Con n} : {A : Ty n} → Tm Γ A → Tm Γ A → Type 
 
 -- Equational reasoning for ∼
 
-module ∼-Reasoning {n : ℕ} {Γ : Con n} where
+module ∼-Reasoning {n : ℕ} {Γ : Con' n} where
 
   infix  1 begin∼_
-  infixr 2 _∼⟨_⟩_ _∼⟨_⟨_ _∼⟨⟩_
+  infixr 2 _∼⟨_⟩_ _∼⟨⟩_
   infix  3 _∎∼
 
   begin∼_ : {A : Ty n} {t u : Tm Γ A} → t ∼ u → t ∼ u
@@ -69,10 +69,6 @@ module ∼-Reasoning {n : ℕ} {Γ : Con n} where
 
   _∼⟨_⟩_ : {A : Ty n} (t : Tm Γ A) {u v : Tm Γ A} → t ∼ u → u ∼ v → t ∼ v
   _ ∼⟨ p ⟩ q = ∼trans p q
-
-  -- same, with the step used backwards
-  _∼⟨_⟨_ : {A : Ty n} (t : Tm Γ A) {u v : Tm Γ A} → u ∼ t → u ∼ v → t ∼ v
-  _ ∼⟨ p ⟨ q = ∼trans (∼sym p) q
 
   _∼⟨⟩_ : {A : Ty n} (t : Tm Γ A) {u : Tm Γ A} → t ∼ u → t ∼ u
   _ ∼⟨⟩ p = p

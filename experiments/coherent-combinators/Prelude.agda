@@ -3,3 +3,4 @@ open import Relation.Binary.PropositionalEquality hiding ([_]) public
 open ≡-Reasoning public
 open import Data.Nat public
 open import Data.Fin using (Fin ; zero ; suc ; #_) public
+open import Data.Product renaming (_×_ to _∧_) public
