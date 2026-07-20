@@ -122,6 +122,19 @@ _∘_ {Γ'' = Γ'' ▹ A} (σ' , t') σ = (σ' ∘ σ) , (t' [ σ ])
 [∘] app σ' σ = refl
 
 ---
+--- Currying
+---
+
+-- Currying against the terminal source, which brings a term with source A back
+-- to a term with source 𝟙
+curry : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A , B) → Tm Γ (𝟙 , A ⇒ B)
+curry t = abs (snd · t)
+
+-- ... and its inverse
+uncurry : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (𝟙 , A ⇒ B) → Tm Γ (A , B)
+uncurry t = pair (term · t) id · app
+
+---
 --- Normal forms
 ---
 
