@@ -278,24 +278,10 @@ module _ {n : ℕ} {Γ : Con n} where
 
   open CL.∼-Reasoning
 
-  -- η on the right: `lamη` applied to a single argument.
-  etaR : {A B : Ty n} (h : CL.Tm (Con→Con' Γ) (A ⇒ B)) → (S $ (K $ h) $ I) CL.∼ h
-  etaR h = CL.∼trans (CL.∼sym red) (CL.∼trans (CL.∼$ CL.lamη CL.∼refl) (CL.Iβ h))
-    where
-      red : (S $ (S $ (K $ S) $ K) $ (K $ I) $ h) CL.∼ (S $ (K $ h) $ I)
-      red = begin∼
-        S $ (S $ (K $ S) $ K) $ (K $ I) $ h
-          ∼⟨ CL.Sβ _ _ _ ⟩
-        S $ (K $ S) $ K $ h $ (K $ I $ h)
-          ∼⟨ CL.∼$ (CL.Sβ _ _ _) (CL.Kβ _ _) ⟩
-        K $ S $ h $ (K $ h) $ I
-          ∼⟨ CL.∼$ (CL.∼$ (CL.Kβ _ _) CL.∼refl) CL.∼refl ⟩
-        S $ (K $ h) $ I ∎∼
-
   G∼ : {A B : Ty n} {f g : CC.Tm Γ (A , B)} → f CC.∼ g → G f CL.∼ G g
 
   -- id · f ∼ f
-  G∼ (CC.unitl f) = etaR (G f)
+  G∼ (CC.unitl f) = CL.etaR (G f)
 
   -- f · id ∼ f
   G∼ (CC.unitr f) =
@@ -358,27 +344,98 @@ module _ {n : ℕ} {Γ : Con n} where
       ∼⟨ CL.∼$ (CL.∼$ CL.∼refl (CL.∼$ (CL.Kβ _ _) CL.∼refl)) CL.∼refl ⟩
     S $ (S $ (K $ P) $ (S $ (K $ P₁) $ G f)) $ (S $ (K $ P₂) $ G f) ∎∼
 
-  -- The remaining categorical axioms.
+  -- The remaining categorical axioms.  Each is discharged with CL's functional
+  -- extensionality (`CL.funext`): apply both towers to a fresh variable,
+  -- normalise with the β/product rules, and compare.  This is exactly the use
+  -- the `lam*` family of CL was built to support.
 
-  -- Associativity of composition: needs
-  --   S $ (K $ G h) $ (S $ (K $ G g) $ G f) ∼ S $ (K $ (S $ (K $ G h) $ G g)) $ G f
-  -- `lamSβ` is the closed tower for this, but it is stated at
-  -- (A ⇒ B ⇒ C ⇒ D) ⇒ … rather than at the composition types, so it does not
-  -- apply directly; the tower probably has to be re-derived.
-  G∼ (CC.assoc f g h) = {!!}
+  -- Associativity of composition.
+  G∼ (CC.assoc f g h) = CL.funext (CL.∼trans redL (CL.∼sym redR))
+    where
+      gf = CL.wk (G f) ; gg = CL.wk (G g) ; gh = CL.wk (G h) ; x = CL.var here'
 
-  -- NOT DERIVABLE as CL currently stands.  The goal is `G f ∼ K $ T` for an
-  -- arbitrary f : Tm Γ (A , 𝟙), i.e. that every CL term of type A ⇒ 𝟙 is K $ T.
-  -- `Tη` only gives this for terms of type 𝟙 itself, and `lamT : K $ T ∼ I` is
-  -- confined to A = 𝟙 (it only typechecks at 𝟙 ⇒ 𝟙).  Closing this needs a new
-  -- rule in CL.agda, and it cannot be a closed tower equation since it is a
-  -- schema in the unknown f:
-  --   lamT' : {A : Ty n} (h : Tm Γ (A ⇒ 𝟙)) → h ∼ K $ T
-  G∼ (CC.text f) = {!!}
+      redL : (S $ (K $ gh) $ (S $ (K $ gg) $ gf) $ x) CL.∼ (gh $ (gg $ (gf $ x)))
+      redL = CL.∼trans (CL.comp$ gh (S $ (K $ gg) $ gf) x)
+                       (CL.∼$ CL.∼refl (CL.comp$ gg gf x))
 
-  -- The two exponential axioms: `lamKβ` / `lamwk` are the relevant towers.
-  G∼ (CC.aβ f) = {!!}
-  G∼ (CC.aext f) = {!!}
+      redR : (S $ (K $ (S $ (K $ gh) $ gg)) $ gf $ x) CL.∼ (gh $ (gg $ (gf $ x)))
+      redR = CL.∼trans (CL.comp$ (S $ (K $ gh) $ gg) gf x)
+                       (CL.comp$ gh gg (gf $ x))
+
+  -- pair (fst · abs f) snd · app ∼ f
+  G∼ (CC.aβ f) = CL.funext (CL.∼trans redL (CL.∼sym redR))
+    where
+      gf = CL.wk (G f) ; x = CL.var here'
+
+      -- Both sides applied to x reduce to `gf $ (P $ (P₁ $ x) $ (P₂ $ x))`.
+      target = gf $ (P $ (P₁ $ x) $ (P₂ $ x))
+
+      redL : (S $ (K $ (S $ P₁ $ P₂))
+                $ (S $ (S $ (K $ P) $ (S $ (K $ (S $ (K $ (S $ (K $ gf))) $ P)) $ P₁)) $ P₂)
+                $ x) CL.∼ target
+      redL = begin∼
+        S $ (K $ (S $ P₁ $ P₂))
+          $ (S $ (S $ (K $ P) $ (S $ (K $ (S $ (K $ (S $ (K $ gf))) $ P)) $ P₁)) $ P₂) $ x
+          ∼⟨ CL.comp$ (S $ P₁ $ P₂) _ x ⟩
+        (S $ P₁ $ P₂) $ (S $ (S $ (K $ P) $ (S $ (K $ (S $ (K $ (S $ (K $ gf))) $ P)) $ P₁)) $ P₂ $ x)
+          ∼⟨ CL.∼$ CL.∼refl (CL.pair$ (S $ (K $ (S $ (K $ (S $ (K $ gf))) $ P)) $ P₁) P₂ x) ⟩
+        (S $ P₁ $ P₂) $ (P $ (S $ (K $ (S $ (K $ (S $ (K $ gf))) $ P)) $ P₁ $ x) $ (P₂ $ x))
+          ∼⟨ CL.∼$ CL.∼refl (CL.∼$ (CL.∼$ CL.∼refl (CL.comp$ (S $ (K $ (S $ (K $ gf))) $ P) P₁ x)) CL.∼refl) ⟩
+        (S $ P₁ $ P₂) $ (P $ (S $ (K $ (S $ (K $ gf))) $ P $ (P₁ $ x)) $ (P₂ $ x))
+          ∼⟨ CL.∼$ CL.∼refl (CL.∼$ (CL.∼$ CL.∼refl (CL.comp$ (S $ (K $ gf)) P (P₁ $ x))) CL.∼refl) ⟩
+        (S $ P₁ $ P₂) $ (P $ (S $ (K $ gf) $ (P $ (P₁ $ x))) $ (P₂ $ x))
+          ∼⟨ CL.app$ (P $ (S $ (K $ gf) $ (P $ (P₁ $ x))) $ (P₂ $ x)) ⟩
+        P₁ $ (P $ (S $ (K $ gf) $ (P $ (P₁ $ x))) $ (P₂ $ x))
+          $ (P₂ $ (P $ (S $ (K $ gf) $ (P $ (P₁ $ x))) $ (P₂ $ x)))
+          ∼⟨ CL.∼$ (CL.P₁β _ _) (CL.P₂β _ _) ⟩
+        (S $ (K $ gf) $ (P $ (P₁ $ x))) $ (P₂ $ x)
+          ∼⟨ CL.comp$ gf (P $ (P₁ $ x)) (P₂ $ x) ⟩
+        gf $ (P $ (P₁ $ x) $ (P₂ $ x)) ∎∼
+
+      redR : (gf $ x) CL.∼ target
+      redR = CL.∼$ CL.∼refl (CL.Pη x)
+
+  -- f ∼ abs (pair (fst · f) snd · app)
+  --
+  -- Unlike `aβ`, the two sides have an *arrow* result type A ⇒ (B ⇒ C), so a
+  -- single `funext` still leaves an arrow: apply `funext` twice, introducing two
+  -- fresh variables x0 : A and x1 : B, then normalise as in `aβ`.  No `Tη` is
+  -- used, so this closes with no new CL rule.
+  G∼ (CC.aext f) = CL.funext (CL.funext (CL.∼sym redR))
+    where
+      gf = CL.wk (CL.wk (G f))
+      x0 = CL.var (drop' here') ; x1 = CL.var here'
+      w = P $ x0 $ x1
+      Gb = S $ (K $ (S $ P₁ $ P₂)) $ (S $ (S $ (K $ P) $ (S $ (K $ gf) $ P₁)) $ P₂)
+
+      redR : (S $ (K $ (S $ (K $ Gb))) $ P $ x0 $ x1) CL.∼ (gf $ x0 $ x1)
+      redR = begin∼
+        S $ (K $ (S $ (K $ Gb))) $ P $ x0 $ x1
+          ∼⟨ CL.∼$ (CL.comp$ (S $ (K $ Gb)) P x0) CL.∼refl ⟩
+        (S $ (K $ Gb)) $ (P $ x0) $ x1
+          ∼⟨ CL.comp$ Gb (P $ x0) x1 ⟩
+        Gb $ w
+          ∼⟨ CL.comp$ (S $ P₁ $ P₂) (S $ (S $ (K $ P) $ (S $ (K $ gf) $ P₁)) $ P₂) w ⟩
+        (S $ P₁ $ P₂) $ (S $ (S $ (K $ P) $ (S $ (K $ gf) $ P₁)) $ P₂ $ w)
+          ∼⟨ CL.∼$ CL.∼refl (CL.pair$ (S $ (K $ gf) $ P₁) P₂ w) ⟩
+        (S $ P₁ $ P₂) $ (P $ (S $ (K $ gf) $ P₁ $ w) $ (P₂ $ w))
+          ∼⟨ CL.∼$ CL.∼refl (CL.∼$ (CL.∼$ CL.∼refl (CL.comp$ gf P₁ w)) CL.∼refl) ⟩
+        (S $ P₁ $ P₂) $ (P $ (gf $ (P₁ $ w)) $ (P₂ $ w))
+          ∼⟨ CL.app$ (P $ (gf $ (P₁ $ w)) $ (P₂ $ w)) ⟩
+        P₁ $ (P $ (gf $ (P₁ $ w)) $ (P₂ $ w)) $ (P₂ $ (P $ (gf $ (P₁ $ w)) $ (P₂ $ w)))
+          ∼⟨ CL.∼$ (CL.P₁β _ _) (CL.P₂β _ _) ⟩
+        (gf $ (P₁ $ w)) $ (P₂ $ w)
+          ∼⟨ CL.∼$ (CL.∼$ CL.∼refl (CL.P₁β x0 x1)) (CL.P₂β x0 x1) ⟩
+        gf $ x0 $ x1 ∎∼
+
+  -- THE ONE GENUINE GAP.  `funext` reduces this to `wk (G f) $ x ∼ T`, which is
+  -- `Tη` — but discharging it goes through `ξ (Tη …)`, the single hole left in
+  -- CL.agda.  See the long note there: unlike every other CC axiom, the
+  -- terminal's `text` has no matching `lam*` rule and is not derivable from the
+  -- current set; it needs the ξ-image of `Tη` added as a primitive.  Written via
+  -- `funext` so the reduction is on record, but it inherits that one hole.
+  G∼ (CC.text f) =
+    CL.funext (CL.∼trans (CL.Tη (CL.wk (G f) $ CL.var here')) (CL.∼sym (CL.Kβ T (CL.var here'))))
 
   -- Congruence and equivalence closure.
   G∼ (CC.∼· p q) = CL.∼$ (CL.∼$ CL.∼refl (CL.∼$ CL.∼refl (G∼ q))) (G∼ p)
