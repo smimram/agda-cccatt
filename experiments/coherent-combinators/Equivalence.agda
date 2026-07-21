@@ -321,6 +321,32 @@ module _ {n : ℕ} {Γ : Con n} where
   -- application node of the tower, or one of `iβ`/`kβ`/`sβ`/`pβ`/`p₁β`/`p₂β`,
   -- which fires a combinator once all its arguments are present.
 
+  -- The node `S (K x) y` -- "compose `x` after `y`" -- occurs in every tower
+  -- below, so it is worth reducing once and for all.
+  distSK : {X A B C : Ty n} (e : Tm Γ (X , 𝟙)) (x : Tm Γ (𝟙 , B ⇒ C)) →
+           e · ap (fS {A = A} {B = B} {C = C}) (ap fK x)
+           ∼ ap (e · fS) (ap (e · fK) (e · x))
+  distSK e x = ∼trans (ap· e fS (ap fK x)) (∼ap ∼refl (ap· e fK x))
+
+  skβ : {X A B C : Ty n} (e : Tm Γ (X , 𝟙)) (x : Tm Γ (X , B ⇒ C))
+        (y : Tm Γ (X , A ⇒ B)) (z : Tm Γ (X , A)) →
+        ap (ap (ap (e · fS) (ap (e · fK) x)) y) z ∼ ap x (ap y z)
+  skβ e x y z = ∼trans (sβ e (ap (e · fK) x) y z) (∼ap (kβ e x z) ∼refl)
+
+  -- `S (K x) y z ∼ x (y z)`, with the tower still to be distributed over.
+  compβ : {X A B C : Ty n} (e : Tm Γ (X , 𝟙)) (x : Tm Γ (𝟙 , B ⇒ C))
+          (y : Tm Γ (𝟙 , A ⇒ B)) (z : Tm Γ (X , A)) →
+          ap (e · ap (ap fS (ap fK x)) y) z ∼ ap (e · x) (ap (e · y) z)
+  compβ e x y z =
+    ∼trans (∼ap (∼trans (ap· e (ap fS (ap fK x)) y) (∼ap (distSK e x) ∼refl)) ∼refl)
+           (skβ e (e · x) (e · y) z)
+
+  -- Same, when the second component of the composition is not part of the tower.
+  skβ' : {X A B C : Ty n} (e : Tm Γ (X , 𝟙)) (x : Tm Γ (𝟙 , B ⇒ C))
+         (y : Tm Γ (X , A ⇒ B)) (z : Tm Γ (X , A)) →
+         ap (ap (e · ap fS (ap fK x)) y) z ∼ ap (e · x) (ap y z)
+  skβ' e x y z = ∼trans (∼ap (∼ap (distSK e x) ∼refl) ∼refl) (skβ e (e · x) y z)
+
   -- lamKβ : S (K S) (S (K K)) ∼ K,  at (A ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ C.
   fLKβ : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ C)
   fLKβ = ap (ap fS (ap fK fS)) (ap fS (ap fK fK))
@@ -350,6 +376,345 @@ module _ {n : ℕ} {Γ : Con n} where
     ap (ap (e · fK) (ap p r)) (ap q r)
       ∼⟨ kβ e (ap p r) (ap q r) ⟩
     ap p r ∎∼
+
+  -- lamη : S (S (K S) K) (K I) ∼ I,  at (A ⇒ B) ⇒ A ⇒ B.
+  fLη : {A B : Ty n} → Tm Γ (𝟙 , (A ⇒ B) ⇒ A ⇒ B)
+  fLη = ap (ap fS (ap (ap fS (ap fK fS)) fK)) (ap fK fI)
+
+  redη : {X A B : Ty n} (e : Tm Γ (X , 𝟙)) (p : Tm Γ (X , A ⇒ B)) (q : Tm Γ (X , A)) →
+         ap (ap (e · fLη) p) q ∼ ap p q
+  redη e p q = begin∼
+    ap (ap (e · ap (ap fS (ap (ap fS (ap fK fS)) fK)) (ap fK fI)) p) q
+      ∼⟨ ∼ap (∼ap (ap· e (ap fS (ap (ap fS (ap fK fS)) fK)) (ap fK fI)) ∼refl) ∼refl ⟩
+    ap (ap (ap (e · ap fS (ap (ap fS (ap fK fS)) fK)) (e · ap fK fI)) p) q
+      ∼⟨ ∼ap (∼ap (∼ap (ap· e fS (ap (ap fS (ap fK fS)) fK)) (ap· e fK fI)) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fS) (e · ap (ap fS (ap fK fS)) fK)) (ap (e · fK) (e · fI))) p) q
+      ∼⟨ ∼ap (∼ap (∼ap (∼ap ∼refl (ap· e (ap fS (ap fK fS)) fK)) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fS) (ap (e · ap fS (ap fK fS)) (e · fK)))
+               (ap (e · fK) (e · fI))) p) q
+      ∼⟨ ∼ap (∼ap (∼ap (∼ap ∼refl (∼ap (ap· e fS (ap fK fS)) ∼refl)) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fS) (ap (ap (e · fS) (e · ap fK fS)) (e · fK)))
+               (ap (e · fK) (e · fI))) p) q
+      ∼⟨ ∼ap (∼ap (∼ap (∼ap ∼refl (∼ap (∼ap ∼refl (ap· e fK fS)) ∼refl)) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fS) (ap (ap (e · fS) (ap (e · fK) (e · fS))) (e · fK)))
+               (ap (e · fK) (e · fI))) p) q
+      ∼⟨ ∼ap (sβ e (ap (ap (e · fS) (ap (e · fK) (e · fS))) (e · fK))
+                   (ap (e · fK) (e · fI)) p) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fS) (ap (e · fK) (e · fS))) (e · fK)) p)
+           (ap (ap (e · fK) (e · fI)) p)) q
+      ∼⟨ ∼ap (∼ap (sβ e (ap (e · fK) (e · fS)) (e · fK) p) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fK) (e · fS)) p) (ap (e · fK) p))
+           (ap (ap (e · fK) (e · fI)) p)) q
+      ∼⟨ ∼ap (∼ap (∼ap (kβ e (e · fS) p) ∼refl) (kβ e (e · fI) p)) ∼refl ⟩
+    ap (ap (ap (e · fS) (ap (e · fK) p)) (e · fI)) q
+      ∼⟨ sβ e (ap (e · fK) p) (e · fI) q ⟩
+    ap (ap (ap (e · fK) p) q) (ap (e · fI) q)
+      ∼⟨ ∼ap (kβ e p q) (iβ e q) ⟩
+    ap p q ∎∼
+
+  -- lamP₁ and lamP₂ share their whole tower except for the projection `c` that
+  -- sits at its head: both build the pair `(p r , q r)` and then apply `c` to it.
+  fLPrj : {A B C Z : Ty n} → Tm Γ (𝟙 , B × C ⇒ Z) → Tm Γ (𝟙 , (A ⇒ B) ⇒ (A ⇒ C) ⇒ A ⇒ Z)
+  fLPrj c = ap (ap fS (ap fK (ap fS (ap fK (ap fS (ap fK c))))))
+               (ap (ap fS (ap fK fS)) (ap fS (ap fK fP)))
+
+  redPrj : {X A B C Z : Ty n} (e : Tm Γ (X , 𝟙)) (c : Tm Γ (𝟙 , B × C ⇒ Z))
+           (p : Tm Γ (X , A ⇒ B)) (q : Tm Γ (X , A ⇒ C)) (r : Tm Γ (X , A)) →
+           ap (ap (ap (e · fLPrj c) p) q) r ∼ ap (e · c) (pair (ap p r) (ap q r))
+  redPrj e c p q r = begin∼
+    ap (ap (ap (e · ap (ap fS (ap fK (ap fS (ap fK (ap fS (ap fK c))))))
+                       (ap (ap fS (ap fK fS)) (ap fS (ap fK fP)))) p) q) r
+      ∼⟨ ∼ap (∼ap (∼ap (ap· e (ap fS (ap fK (ap fS (ap fK (ap fS (ap fK c))))))
+                              (ap (ap fS (ap fK fS)) (ap fS (ap fK fP)))) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · ap fS (ap fK (ap fS (ap fK (ap fS (ap fK c))))))
+                   (e · ap (ap fS (ap fK fS)) (ap fS (ap fK fP)))) p) q) r
+      ∼⟨ ∼ap (∼ap (∼ap (∼ap distU distV) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fS) (ap (e · fK) U₁)) V₁) p) q) r
+      ∼⟨ ∼ap (∼ap (sβ e (ap (e · fK) U₁) V₁ p) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fK) U₁) p) (ap V₁ p)) q) r
+      ∼⟨ ∼ap (∼ap (∼ap (kβ e U₁ p) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap U₁ (ap V₁ p)) q) r
+      ∼⟨ ∼ap (sβ e (ap (e · fK) U₂) (ap V₁ p) q) ∼refl ⟩
+    ap (ap (ap (ap (e · fK) U₂) q) (ap (ap V₁ p) q)) r
+      ∼⟨ ∼ap (∼ap (kβ e U₂ q) ∼refl) ∼refl ⟩
+    ap (ap U₂ (ap (ap V₁ p) q)) r
+      ∼⟨ sβ e (ap (e · fK) (e · c)) (ap (ap V₁ p) q) r ⟩
+    ap (ap (ap (e · fK) (e · c)) r) (ap (ap (ap V₁ p) q) r)
+      ∼⟨ ∼ap (kβ e (e · c) r) redV ⟩
+    ap (e · c) (pair (ap p r) (ap q r)) ∎∼
+    where
+      U₂ : Tm Γ (_ , _)
+      U₂ = ap (e · fS) (ap (e · fK) (e · c))
+
+      U₁ : Tm Γ (_ , _)
+      U₁ = ap (e · fS) (ap (e · fK) U₂)
+
+      V₂ : Tm Γ (_ , _)
+      V₂ = ap (e · fS) (ap (e · fK) (e · fP))
+
+      V₁ : Tm Γ (_ , _)
+      V₁ = ap (ap (e · fS) (ap (e · fK) (e · fS))) V₂
+
+      -- Distributing `e` over the two halves of the tower.
+      distU : (e · ap fS (ap fK (ap fS (ap fK (ap fS (ap fK c))))))
+              ∼ ap (e · fS) (ap (e · fK) U₁)
+      distU = begin∼
+        e · ap fS (ap fK (ap fS (ap fK (ap fS (ap fK c)))))
+          ∼⟨ ap· e fS (ap fK (ap fS (ap fK (ap fS (ap fK c))))) ⟩
+        ap (e · fS) (e · ap fK (ap fS (ap fK (ap fS (ap fK c)))))
+          ∼⟨ ∼ap ∼refl (ap· e fK (ap fS (ap fK (ap fS (ap fK c))))) ⟩
+        ap (e · fS) (ap (e · fK) (e · ap fS (ap fK (ap fS (ap fK c)))))
+          ∼⟨ ∼ap ∼refl (∼ap ∼refl (ap· e fS (ap fK (ap fS (ap fK c))))) ⟩
+        ap (e · fS) (ap (e · fK) (ap (e · fS) (e · ap fK (ap fS (ap fK c)))))
+          ∼⟨ ∼ap ∼refl (∼ap ∼refl (∼ap ∼refl (ap· e fK (ap fS (ap fK c))))) ⟩
+        ap (e · fS) (ap (e · fK) (ap (e · fS) (ap (e · fK) (e · ap fS (ap fK c)))))
+          ∼⟨ ∼ap ∼refl (∼ap ∼refl (∼ap ∼refl (∼ap ∼refl (ap· e fS (ap fK c))))) ⟩
+        ap (e · fS) (ap (e · fK) (ap (e · fS) (ap (e · fK) (ap (e · fS) (e · ap fK c)))))
+          ∼⟨ ∼ap ∼refl (∼ap ∼refl (∼ap ∼refl (∼ap ∼refl (∼ap ∼refl (ap· e fK c))))) ⟩
+        ap (e · fS) (ap (e · fK) U₁) ∎∼
+
+      distV : (e · ap (ap fS (ap fK fS)) (ap fS (ap fK fP))) ∼ V₁
+      distV = begin∼
+        e · ap (ap fS (ap fK fS)) (ap fS (ap fK fP))
+          ∼⟨ ap· e (ap fS (ap fK fS)) (ap fS (ap fK fP)) ⟩
+        ap (e · ap fS (ap fK fS)) (e · ap fS (ap fK fP))
+          ∼⟨ ∼ap (ap· e fS (ap fK fS)) (ap· e fS (ap fK fP)) ⟩
+        ap (ap (e · fS) (e · ap fK fS)) (ap (e · fS) (e · ap fK fP))
+          ∼⟨ ∼ap (∼ap ∼refl (ap· e fK fS)) (∼ap ∼refl (ap· e fK fP)) ⟩
+        V₁ ∎∼
+
+      -- The `V` half assembles the pair.
+      redV : ap (ap (ap V₁ p) q) r ∼ pair (ap p r) (ap q r)
+      redV = begin∼
+        ap (ap (ap (ap (ap (e · fS) (ap (e · fK) (e · fS))) V₂) p) q) r
+          ∼⟨ ∼ap (∼ap (sβ e (ap (e · fK) (e · fS)) V₂ p) ∼refl) ∼refl ⟩
+        ap (ap (ap (ap (ap (e · fK) (e · fS)) p) (ap V₂ p)) q) r
+          ∼⟨ ∼ap (∼ap (∼ap (kβ e (e · fS) p) ∼refl) ∼refl) ∼refl ⟩
+        ap (ap (ap (e · fS) (ap V₂ p)) q) r
+          ∼⟨ sβ e (ap V₂ p) q r ⟩
+        ap (ap (ap V₂ p) r) (ap q r)
+          ∼⟨ ∼ap (sβ e (ap (e · fK) (e · fP)) p r) ∼refl ⟩
+        ap (ap (ap (ap (e · fK) (e · fP)) r) (ap p r)) (ap q r)
+          ∼⟨ ∼ap (∼ap (kβ e (e · fP) r) ∼refl) ∼refl ⟩
+        ap (ap (e · fP) (ap p r)) (ap q r)
+          ∼⟨ pβ e (ap p r) (ap q r) ⟩
+        pair (ap p r) (ap q r) ∎∼
+
+  -- lamwk : S (S (K S) (S (K K) (S (K S) K))) (K K) ∼ S (K K),
+  -- at (A ⇒ C) ⇒ A ⇒ B ⇒ C.  Both sides discard their third argument.
+  fwkN' : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ C) ⇒ (B ⇒ A) ⇒ B ⇒ C)
+  fwkN' = ap (ap fS (ap fK fS)) fK
+
+  fwkN : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ C) ⇒ A ⇒ (B ⇒ A) ⇒ B ⇒ C)
+  fwkN = ap (ap fS (ap fK fK)) fwkN'
+
+  fwkM : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ C) ⇒ (A ⇒ B ⇒ A) ⇒ A ⇒ B ⇒ C)
+  fwkM = ap (ap fS (ap fK fS)) fwkN
+
+  fLwk : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ C) ⇒ A ⇒ B ⇒ C)
+  fLwk = ap (ap fS fwkM) (ap fK fK)
+
+  redwk : {X A B C : Ty n} (e : Tm Γ (X , 𝟙))
+          (p : Tm Γ (X , A ⇒ C)) (q : Tm Γ (X , A)) (r : Tm Γ (X , B)) →
+          ap (ap (ap (e · fLwk) p) q) r ∼ ap p q
+  redwk e p q r = begin∼
+    ap (ap (ap (e · ap (ap fS fwkM) (ap fK fK)) p) q) r
+      ∼⟨ ∼ap (∼ap (∼ap (∼trans (ap· e (ap fS fwkM) (ap fK fK))
+                               (∼ap (ap· e fS fwkM) (ap· e fK fK))) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fS) (e · fwkM)) (ap (e · fK) (e · fK))) p) q) r
+      ∼⟨ ∼ap (∼ap (sβ e (e · fwkM) (ap (e · fK) (e · fK)) p) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fwkM) p) (ap (ap (e · fK) (e · fK)) p)) q) r
+      ∼⟨ ∼ap (∼ap (∼ap ∼refl (kβ e (e · fK) p)) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fwkM) p) (e · fK)) q) r
+      ∼⟨ ∼ap (∼ap (∼ap (compβ e fS fwkN p) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fS) (ap (e · fwkN) p)) (e · fK)) q) r
+      ∼⟨ ∼ap (sβ e (ap (e · fwkN) p) (e · fK) q) ∼refl ⟩
+    ap (ap (ap (ap (e · fwkN) p) q) (ap (e · fK) q)) r
+      ∼⟨ ∼ap (∼ap (∼ap (compβ e fK fwkN' p) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fK) (ap (e · fwkN') p)) q) (ap (e · fK) q)) r
+      ∼⟨ ∼ap (∼ap (kβ e (ap (e · fwkN') p) q) ∼refl) ∼refl ⟩
+    ap (ap (ap (e · fwkN') p) (ap (e · fK) q)) r
+      ∼⟨ ∼ap (∼ap (compβ e fS fK p) ∼refl) ∼refl ⟩
+    ap (ap (ap (e · fS) (ap (e · fK) p)) (ap (e · fK) q)) r
+      ∼⟨ sβ e (ap (e · fK) p) (ap (e · fK) q) r ⟩
+    ap (ap (ap (e · fK) p) r) (ap (ap (e · fK) q) r)
+      ∼⟨ ∼ap (kβ e p r) (kβ e q r) ⟩
+    ap p q ∎∼
+
+  redwkR : {X A B C : Ty n} (e : Tm Γ (X , 𝟙))
+           (p : Tm Γ (X , A ⇒ C)) (q : Tm Γ (X , A)) (r : Tm Γ (X , B)) →
+           ap (ap (ap (e · ap fS (ap fK fK)) p) q) r ∼ ap p q
+  redwkR e p q r = ∼trans (∼ap (skβ' e fK p q) ∼refl) (kβ e (ap p q) r)
+
+  -- lamP : S (S (K S) (S (K (S (K P))) (S (K P₁)))) (S (K P₂)) ∼ I,
+  -- at (A ⇒ B × C) ⇒ A ⇒ B × C.  The tower rebuilds the pair it took apart.
+  fPM₃ : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ B × C) ⇒ A ⇒ B)
+  fPM₃ = ap fS (ap fK fP₁)
+
+  fPM'' : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ B) ⇒ A ⇒ C ⇒ B × C)
+  fPM'' = ap fS (ap fK fP)
+
+  fPM' : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ B × C) ⇒ A ⇒ C ⇒ B × C)
+  fPM' = ap (ap fS (ap fK fPM'')) fPM₃
+
+  fPM : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ B × C) ⇒ (A ⇒ C) ⇒ A ⇒ B × C)
+  fPM = ap (ap fS (ap fK fS)) fPM'
+
+  fPN : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ B × C) ⇒ A ⇒ C)
+  fPN = ap fS (ap fK fP₂)
+
+  fLP : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ B × C) ⇒ A ⇒ B × C)
+  fLP = ap (ap fS fPM) fPN
+
+  redlamP : {X A B C : Ty n} (e : Tm Γ (X , 𝟙))
+            (p : Tm Γ (X , A ⇒ B × C)) (q : Tm Γ (X , A)) →
+            ap (ap (e · fLP) p) q ∼ ap p q
+  redlamP e p q = begin∼
+    ap (ap (e · ap (ap fS fPM) fPN) p) q
+      ∼⟨ ∼ap (∼ap (∼trans (ap· e (ap fS fPM) fPN) (∼ap (ap· e fS fPM) ∼refl)) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fS) (e · fPM)) (e · fPN)) p) q
+      ∼⟨ ∼ap (sβ e (e · fPM) (e · fPN) p) ∼refl ⟩
+    ap (ap (ap (e · fPM) p) (ap (e · fPN) p)) q
+      ∼⟨ ∼ap (∼ap (compβ e fS fPM' p) ∼refl) ∼refl ⟩
+    ap (ap (ap (e · fS) (ap (e · fPM') p)) (ap (e · fPN) p)) q
+      ∼⟨ sβ e (ap (e · fPM') p) (ap (e · fPN) p) q ⟩
+    ap (ap (ap (e · fPM') p) q) (ap (ap (e · fPN) p) q)
+      ∼⟨ ∼ap redM redN ⟩
+    ap (ap (e · fP) (ap p q · fst)) (ap p q · snd)
+      ∼⟨ pβ e (ap p q · fst) (ap p q · snd) ⟩
+    pair (ap p q · fst) (ap p q · snd)
+      ∼⟨ ∼sym (pext (ap p q)) ⟩
+    ap p q ∎∼
+    where
+      -- The `M` half applies `P` to the first projection …
+      redM : ap (ap (e · fPM') p) q ∼ ap (e · fP) (ap p q · fst)
+      redM = begin∼
+        ap (ap (e · ap (ap fS (ap fK fPM'')) fPM₃) p) q
+          ∼⟨ ∼ap (compβ e fPM'' fPM₃ p) ∼refl ⟩
+        ap (ap (e · fPM'') (ap (e · fPM₃) p)) q
+          ∼⟨ skβ' e fP (ap (e · fPM₃) p) q ⟩
+        ap (e · fP) (ap (ap (e · fPM₃) p) q)
+          ∼⟨ ∼ap ∼refl (∼trans (skβ' e fP₁ p q) (p₁β e (ap p q))) ⟩
+        ap (e · fP) (ap p q · fst) ∎∼
+
+      -- … and the `N` half supplies the second.
+      redN : ap (ap (e · fPN) p) q ∼ (ap p q · snd)
+      redN = ∼trans (skβ' e fP₂ p q) (p₂β e (ap p q))
+
+  -- lamSβ, at (A ⇒ B ⇒ C ⇒ D) ⇒ (A ⇒ B ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ D: the two towers
+  -- are the bracket abstractions of the two sides of `S`'s own β-rule, so on four
+  -- arguments both compute `a d (c d) (b d (c d))`.
+
+  -- Left: S (K (S (K S))) (S (K S) (S (K S))).
+  fSβv : {A B C D : Ty n} → Tm Γ (𝟙 , (A ⇒ B ⇒ C ⇒ D) ⇒ A ⇒ (B ⇒ C) ⇒ B ⇒ D)
+  fSβv = ap fS (ap fK fS)
+
+  fSβy : {A B C D : Ty n} → Tm Γ (𝟙 , (A ⇒ B ⇒ C ⇒ D) ⇒ (A ⇒ B ⇒ C) ⇒ A ⇒ B ⇒ D)
+  fSβy = ap (ap fS (ap fK fS)) fSβv
+
+  fSβx : {A B C D : Ty n} →
+         Tm Γ (𝟙 , ((A ⇒ B ⇒ C) ⇒ A ⇒ B ⇒ D) ⇒ (A ⇒ B ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ D)
+  fSβx = ap fS (ap fK fS)
+
+  fLSβ : {A B C D : Ty n} →
+         Tm Γ (𝟙 , (A ⇒ B ⇒ C ⇒ D) ⇒ (A ⇒ B ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ D)
+  fLSβ = ap (ap fS (ap fK fSβx)) fSβy
+
+  redSβL : {X A B C D : Ty n} (e : Tm Γ (X , 𝟙))
+           (a : Tm Γ (X , A ⇒ B ⇒ C ⇒ D)) (b : Tm Γ (X , A ⇒ B ⇒ C))
+           (c : Tm Γ (X , A ⇒ B)) (d : Tm Γ (X , A)) →
+           ap (ap (ap (ap (e · fLSβ) a) b) c) d
+           ∼ ap (ap (ap a d) (ap c d)) (ap (ap b d) (ap c d))
+  redSβL e a b c d = begin∼
+    ap (ap (ap (ap (e · ap (ap fS (ap fK fSβx)) fSβy) a) b) c) d
+      ∼⟨ ∼ap (∼ap (∼ap (compβ e fSβx fSβy a) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fSβx) (ap (e · fSβy) a)) b) c) d
+      ∼⟨ ∼ap (∼ap (skβ' e fS (ap (e · fSβy) a) b) ∼refl) ∼refl ⟩
+    ap (ap (ap (e · fS) (ap (ap (e · fSβy) a) b)) c) d
+      ∼⟨ sβ e (ap (ap (e · fSβy) a) b) c d ⟩
+    ap (ap (ap (ap (e · fSβy) a) b) d) (ap c d)
+      ∼⟨ ∼ap redY ∼refl ⟩
+    ap (ap (ap (e · fS) (ap a d)) (ap b d)) (ap c d)
+      ∼⟨ sβ e (ap a d) (ap b d) (ap c d) ⟩
+    ap (ap (ap a d) (ap c d)) (ap (ap b d) (ap c d)) ∎∼
+    where
+      redY : ap (ap (ap (e · fSβy) a) b) d ∼ ap (ap (e · fS) (ap a d)) (ap b d)
+      redY = begin∼
+        ap (ap (ap (e · ap (ap fS (ap fK fS)) fSβv) a) b) d
+          ∼⟨ ∼ap (∼ap (compβ e fS fSβv a) ∼refl) ∼refl ⟩
+        ap (ap (ap (e · fS) (ap (e · fSβv) a)) b) d
+          ∼⟨ sβ e (ap (e · fSβv) a) b d ⟩
+        ap (ap (ap (e · fSβv) a) d) (ap b d)
+          ∼⟨ ∼ap (skβ' e fS a d) ∼refl ⟩
+        ap (ap (e · fS) (ap a d)) (ap b d) ∎∼
+
+  -- Right: S (S (K S) (S (K K) (S (K S) (S (K (S (K S))) S)))) (K S).
+  fSβx₁ : {A B C D : Ty n} →
+          Tm Γ (𝟙 , ((A ⇒ B) ⇒ A ⇒ C ⇒ D) ⇒ (A ⇒ B) ⇒ (A ⇒ C) ⇒ A ⇒ D)
+  fSβx₁ = ap fS (ap fK fS)
+
+  fSβRP : {A B C D : Ty n} →
+          Tm Γ (𝟙 , (A ⇒ B ⇒ C ⇒ D) ⇒ (A ⇒ B) ⇒ (A ⇒ C) ⇒ A ⇒ D)
+  fSβRP = ap (ap fS (ap fK fSβx₁)) fS
+
+  fSβRO : {A B C D : Ty n} →
+          Tm Γ (𝟙 , (A ⇒ B ⇒ C ⇒ D) ⇒ ((A ⇒ B) ⇒ A ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ D)
+  fSβRO = ap (ap fS (ap fK fS)) fSβRP
+
+  fSβRN : {A B C D : Ty n} →
+          Tm Γ (𝟙 , (A ⇒ B ⇒ C ⇒ D) ⇒ (A ⇒ B ⇒ C) ⇒ ((A ⇒ B) ⇒ A ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ D)
+  fSβRN = ap (ap fS (ap fK fK)) fSβRO
+
+  fSβRM : {A B C D : Ty n} →
+          Tm Γ (𝟙 , (A ⇒ B ⇒ C ⇒ D) ⇒ ((A ⇒ B ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ C)
+                    ⇒ (A ⇒ B ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ D)
+  fSβRM = ap (ap fS (ap fK fS)) fSβRN
+
+  fRSβ : {A B C D : Ty n} →
+         Tm Γ (𝟙 , (A ⇒ B ⇒ C ⇒ D) ⇒ (A ⇒ B ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ D)
+  fRSβ = ap (ap fS fSβRM) (ap fK fS)
+
+  redSβR : {X A B C D : Ty n} (e : Tm Γ (X , 𝟙))
+           (a : Tm Γ (X , A ⇒ B ⇒ C ⇒ D)) (b : Tm Γ (X , A ⇒ B ⇒ C))
+           (c : Tm Γ (X , A ⇒ B)) (d : Tm Γ (X , A)) →
+           ap (ap (ap (ap (e · fRSβ) a) b) c) d
+           ∼ ap (ap (ap a d) (ap c d)) (ap (ap b d) (ap c d))
+  redSβR e a b c d = begin∼
+    ap (ap (ap (ap (e · ap (ap fS fSβRM) (ap fK fS)) a) b) c) d
+      ∼⟨ ∼ap (∼ap (∼ap (∼ap (∼trans (ap· e (ap fS fSβRM) (ap fK fS))
+                                    (∼ap (ap· e fS fSβRM) (ap· e fK fS)))
+                            ∼refl) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (ap (e · fS) (e · fSβRM)) (ap (e · fK) (e · fS))) a) b) c) d
+      ∼⟨ ∼ap (∼ap (∼ap (sβ e (e · fSβRM) (ap (e · fK) (e · fS)) a) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fSβRM) a) (ap (ap (e · fK) (e · fS)) a)) b) c) d
+      ∼⟨ ∼ap (∼ap (∼ap (∼ap ∼refl (kβ e (e · fS) a)) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fSβRM) a) (e · fS)) b) c) d
+      ∼⟨ ∼ap (∼ap (∼ap (∼ap (compβ e fS fSβRN a) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fS) (ap (e · fSβRN) a)) (e · fS)) b) c) d
+      ∼⟨ ∼ap (∼ap (sβ e (ap (e · fSβRN) a) (e · fS) b) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fSβRN) a) b) (ap (e · fS) b)) c) d
+      ∼⟨ ∼ap (∼ap (∼ap (∼ap (compβ e fK fSβRO a) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fK) (ap (e · fSβRO) a)) b) (ap (e · fS) b)) c) d
+      ∼⟨ ∼ap (∼ap (∼ap (kβ e (ap (e · fSβRO) a) b) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fSβRO) a) (ap (e · fS) b)) c) d
+      ∼⟨ ∼ap (∼ap (∼ap (compβ e fS fSβRP a) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · fS) (ap (e · fSβRP) a)) (ap (e · fS) b)) c) d
+      ∼⟨ ∼ap (sβ e (ap (e · fSβRP) a) (ap (e · fS) b) c) ∼refl ⟩
+    ap (ap (ap (ap (e · fSβRP) a) c) (ap (ap (e · fS) b) c)) d
+      ∼⟨ ∼ap (∼ap redRP ∼refl) ∼refl ⟩
+    ap (ap (ap (e · fS) (ap (ap (e · fS) a) c)) (ap (ap (e · fS) b) c)) d
+      ∼⟨ sβ e (ap (ap (e · fS) a) c) (ap (ap (e · fS) b) c) d ⟩
+    ap (ap (ap (ap (e · fS) a) c) d) (ap (ap (ap (e · fS) b) c) d)
+      ∼⟨ ∼ap (sβ e a c d) (sβ e b c d) ⟩
+    ap (ap (ap a d) (ap c d)) (ap (ap b d) (ap c d)) ∎∼
+    where
+      redRP : ap (ap (e · fSβRP) a) c ∼ ap (e · fS) (ap (ap (e · fS) a) c)
+      redRP = begin∼
+        ap (ap (e · ap (ap fS (ap fK fSβx₁)) fS) a) c
+          ∼⟨ ∼ap (compβ e fSβx₁ fS a) ∼refl ⟩
+        ap (ap (e · fSβx₁) (ap (e · fS) a)) c
+          ∼⟨ skβ' e fS (ap (e · fS) a) c ⟩
+        ap (e · fS) (ap (ap (e · fS) a) c) ∎∼
 
 --- The translation F preserves the equivalence
 
@@ -526,12 +891,33 @@ module _ {n : ℕ} {Γ : Con' n} where
   F∼ CL.lamKβ =
     ext0 (ext1 (ext2 (ext3 (λ e p q r →
       CC.∼trans (redKβ e p q r) (CC.∼sym (∼ap (kβ e p q) CC.∼refl))))))
-  F∼ CL.lamSβ = {!!}
-  F∼ CL.lamwk = {!!}
-  F∼ CL.lamη = {!!}
-  F∼ CL.lamP₁ = {!!}
-  F∼ CL.lamP₂ = {!!}
-  F∼ CL.lamP = {!!}
+  F∼ CL.lamSβ =
+    ext0 (ext1 (ext2 (ext3 (ext4 (λ e a b c d →
+      CC.∼trans (redSβL e a b c d) (CC.∼sym (redSβR e a b c d)))))))
+  F∼ CL.lamwk =
+    ext0 (ext1 (ext2 (ext3 (λ e p q r →
+      CC.∼trans (redwk e p q r) (CC.∼sym (redwkR e p q r))))))
+  F∼ CL.lamη =
+    ext0 (ext1 (ext2 (λ e p q →
+      CC.∼trans (redη e p q) (CC.∼sym (∼ap (iβ e p) CC.∼refl)))))
+  F∼ CL.lamP₁ =
+    ext0 (ext1 (ext2 (ext3 (λ e p q r →
+      CC.∼trans (redPrj e fP₁ p q r)
+        (CC.∼trans (p₁β e (pair (ap p r) (ap q r)))
+          (CC.∼trans (CC.pfst (ap p r) (ap q r))
+                     (CC.∼sym (∼ap (kβ e p q) CC.∼refl))))))))
+  F∼ CL.lamP₂ =
+    ext0 (ext1 (ext2 (ext3 (λ e p q r →
+      CC.∼trans (redPrj e fP₂ p q r)
+        (CC.∼trans (p₂β e (pair (ap p r) (ap q r)))
+          (CC.∼trans (CC.psnd (ap p r) (ap q r))
+            -- the right-hand side `K I` still has to have `e` distributed into it
+            (CC.∼sym (CC.∼trans (∼ap (∼ap (∼ap (ap· e fK fI) CC.∼refl) CC.∼refl) CC.∼refl)
+                       (CC.∼trans (∼ap (∼ap (kβ e (e · fI) p) CC.∼refl) CC.∼refl)
+                                  (∼ap (iβ e q) CC.∼refl))))))))))
+  F∼ CL.lamP =
+    ext0 (ext1 (ext2 (λ e p q →
+      CC.∼trans (redlamP e p q) (CC.∼sym (∼ap (iβ e p) CC.∼refl)))))
   -- After two CC funexts the goal is between two maps into 𝟙, and `text` makes
   -- both equal to `term`.
   F∼ CL.lamText = funext (funext (CC.∼trans (CC.text _) (CC.∼sym (CC.text _))))
