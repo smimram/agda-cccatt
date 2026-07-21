@@ -56,8 +56,8 @@ data _∼_ {n : ℕ} {Γ : Con' n} : {A : Ty n} → Tm Γ A → Tm Γ A → Type
             I
             (K $ (K $ T))
   ∼$ : {A B : Ty n} {t t' : Tm Γ (A ⇒ B)} {u u' : Tm Γ A} → t ∼ t' → u ∼ u' → t $ u ∼ t' $ u'
-  ∼refl : {A : Ty n} {t : Tm Γ A} → t ∼ t
-  ∼sym : {A : Ty n} {t u : Tm Γ A} → t ∼ u → u ∼ t
+  ∼refl  : {A : Ty n} {t : Tm Γ A} → t ∼ t
+  ∼sym   : {A : Ty n} {t u : Tm Γ A} → t ∼ u → u ∼ t
   ∼trans : {A : Ty n} {t u v : Tm Γ A} → t ∼ u → u ∼ v → t ∼ v
 
 -- Equational reasoning for ∼
