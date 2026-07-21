@@ -690,6 +690,11 @@ module _ {n : ℕ} where
           ∼⟨ ∼trans (text (fst · term)) (∼sym (text (snd · term))) ⟩
         snd · term ∎∼
 
+  -- The inductive cases.  `G` sends composition/pairing/abstraction to S/K/P
+  -- towers, so `F (G _)` is a nest of `ap`s over `F S`/`F K`/`F P`; one funext
+  -- (or two for `abs`, whose result is an arrow) plus `sβ`/`kβ`/`pβ` reduce it,
+  -- and the induction hypotheses `FG f`/`FG g` replace the sub-names.  Same shape
+  -- as `app`/`term` above but longer; left open.
   FG (f · g) = {!!}
   FG (pair f g) = {!!}
   FG (abs f) = {!!}
