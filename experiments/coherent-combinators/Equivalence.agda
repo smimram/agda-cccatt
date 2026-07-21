@@ -123,6 +123,94 @@ module _ {n : ℕ} {Γ : Con n} where
            pair (fst · f) snd · app ∼ pair (fst · g) snd · app → f ∼ g
   funext {f = f} {g = g} p = ∼trans (aext f) (∼trans (∼abs p) (∼sym (aext g)))
 
+  --- Generalized combinator laws for the images of the CL combinators.
+  --
+  -- `ap` is CC's counterpart of CL application on points (of any base object X);
+  -- `F (t $ u)` is definitionally `ap (F t) (F u)`.  Each law lets the combinator
+  -- sit under an arbitrary environment `e : X → 𝟙`, so that after `funext`
+  -- pushes projections in front of `F c`, the projection composite is absorbed
+  -- into `e`.  These are the `F∼ (Iβ/Kβ/Sβ/…)` proofs generalised from F-images
+  -- to arbitrary points.
+
+  ap : {X A B : Ty n} → Tm Γ (X , A ⇒ B) → Tm Γ (X , A) → Tm Γ (X , B)
+  ap f a = pair f a · app
+
+  -- `ap` commutes with precomposition (this is `appComp`).
+  ap· : {X Y A B : Ty n} (e : Tm Γ (X , Y)) (f : Tm Γ (Y , A ⇒ B)) (a : Tm Γ (Y , A)) →
+        e · ap f a ∼ ap (e · f) (e · a)
+  ap· = appComp
+
+  -- F I = abs snd
+  iβ : {X A : Ty n} (e : Tm Γ (X , 𝟙)) (p : Tm Γ (X , A)) →
+       ap (e · abs snd) p ∼ p
+  iβ e p = ∼trans (beta snd e p) (psnd e p)
+
+  -- F P₁ = abs (snd · fst),  F P₂ = abs (snd · snd)
+  p₁β : {X A B : Ty n} (e : Tm Γ (X , 𝟙)) (p : Tm Γ (X , A × B)) →
+        ap (e · abs (snd · fst)) p ∼ p · fst
+  p₁β e p = ∼trans (beta (snd · fst) e p)
+                   (∼trans (∼sym (assoc _ _ _)) (∼· (psnd e p) ∼refl))
+
+  p₂β : {X A B : Ty n} (e : Tm Γ (X , 𝟙)) (p : Tm Γ (X , A × B)) →
+        ap (e · abs (snd · snd)) p ∼ p · snd
+  p₂β e p = ∼trans (beta (snd · snd) e p)
+                   (∼trans (∼sym (assoc _ _ _)) (∼· (psnd e p) ∼refl))
+
+  -- F K = abs (abs (fst · snd))
+  kβ : {X A B : Ty n} (e : Tm Γ (X , 𝟙)) (p : Tm Γ (X , A)) (q : Tm Γ (X , B)) →
+       ap (ap (e · abs (abs (fst · snd))) p) q ∼ p
+  kβ e p q =
+    ∼trans (∼· (∼pair (beta (abs (fst · snd)) e p) ∼refl) ∼refl)
+      (∼trans (beta (fst · snd) (pair e p) q)
+        (∼trans (∼sym (assoc _ _ _))
+          (∼trans (∼· (pfst (pair e p) q) ∼refl) (psnd e p))))
+
+  -- F P = abs (abs (pair (fst · snd) snd))
+  pβ : {X A B : Ty n} (e : Tm Γ (X , 𝟙)) (p : Tm Γ (X , A)) (q : Tm Γ (X , B)) →
+       ap (ap (e · abs (abs (pair (fst · snd) snd))) p) q ∼ pair p q
+  pβ e p q =
+    ∼trans (∼· (∼pair (beta (abs (pair (fst · snd) snd)) e p) ∼refl) ∼refl)
+      (∼trans (beta (pair (fst · snd) snd) (pair e p) q)
+        (∼trans (pairComp _ _ _)
+          (∼pair (∼trans (∼sym (assoc _ _ _)) (∼trans (∼· (pfst (pair e p) q) ∼refl) (psnd e p)))
+                 (psnd (pair e p) q))))
+
+  -- F S = abs (abs (abs (pair (pair (fst · fst · snd) snd · app)
+  --                           (pair (fst · snd) snd · app) · app)))
+  sβ : {X A B C : Ty n} (e : Tm Γ (X , 𝟙))
+       (p : Tm Γ (X , A ⇒ B ⇒ C)) (q : Tm Γ (X , A ⇒ B)) (r : Tm Γ (X , A)) →
+       ap (ap (ap (e · abs (abs (abs (pair (pair (fst · fst · snd) snd · app)
+                                          (pair (fst · snd) snd · app) · app)))) p) q) r
+       ∼ ap (ap p r) (ap q r)
+  sβ {A = A} {B = B} {C = C} e p q r = begin∼
+    ap (ap (ap (e · abs (abs (abs BODY))) p) q) r
+      ∼⟨ ∼· (∼pair (∼· (∼pair (beta (abs (abs BODY)) e p) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (e1 · abs (abs BODY)) q) r
+      ∼⟨ ∼· (∼pair (beta (abs BODY) e1 q) ∼refl) ∼refl ⟩
+    ap (e2 · abs BODY) r
+      ∼⟨ beta BODY e2 r ⟩
+    e3 · BODY
+      ∼⟨ ap· e3 _ _ ⟩
+    ap (e3 · ap (fst · fst · snd) snd) (e3 · ap (fst · snd) snd)
+      ∼⟨ ∼· (∼pair (ap· e3 _ _) (ap· e3 _ _)) ∼refl ⟩
+    ap (ap (e3 · (fst · fst · snd)) (e3 · snd)) (ap (e3 · (fst · snd)) (e3 · snd))
+      ∼⟨ ∼· (∼pair (∼· (∼pair red-ffs (psnd e2 r)) ∼refl)
+                   (∼· (∼pair red-fs (psnd e2 r)) ∼refl)) ∼refl ⟩
+    ap (ap p r) (ap q r) ∎∼
+    where
+      e1 = pair e p ; e2 = pair e1 q ; e3 = pair e2 r
+      BODY : Tm Γ ((((𝟙 × (A ⇒ B ⇒ C)) × (A ⇒ B)) × A) , C)
+      BODY = pair (pair (fst · fst · snd) snd · app) (pair (fst · snd) snd · app) · app
+
+      red-ffs : e3 · (fst · fst · snd) ∼ p
+      red-ffs = ∼trans (∼sym (assoc _ _ _))
+                  (∼trans (∼· (∼sym (assoc _ _ _)) ∼refl)
+                    (∼trans (∼· (∼· (pfst e2 r) ∼refl) ∼refl)
+                      (∼trans (∼· (pfst e1 q) ∼refl) (psnd e p))))
+
+      red-fs : e3 · (fst · snd) ∼ q
+      red-fs = ∼trans (∼sym (assoc _ _ _)) (∼trans (∼· (pfst e2 r) ∼refl) (psnd e1 q))
+
 --- The translation F preserves the equivalence
 
 module _ {n : ℕ} {Γ : Con' n} where
@@ -252,7 +340,49 @@ module _ {n : ℕ} {Γ : Con' n} where
   -- sides translate to global elements of an exponential and cannot simply be
   -- β-reduced to a point: they have to be compared under `funext` above, after
   -- applying them to generic arguments.
-  F∼ CL.lamIβ = {!!}
+  -- S (K I) ∼ I.  Two funexts introduce a generic function g = fst · snd and a
+  -- generic argument a = snd (over Θ = (𝟙 × (A⇒B)) × A); both towers reduce to
+  -- `ap g a` by the generalized combinator laws.
+  F∼ CL.lamIβ = funext (funext (CC.∼trans redL (CC.∼sym redR)))
+    where
+      e = fst · fst ; g = fst · snd ; a = snd
+
+      redR : ap (fst · ap (fst · F I) snd) snd CC.∼ ap g a
+      redR = CC.∼· (CC.∼pair (CC.∼· CC.∼refl (iβ fst snd)) CC.∼refl) CC.∼refl
+
+      redL : ap (fst · ap (fst · F (S $ (K $ I))) snd) snd CC.∼ ap g a
+      redL = begin∼
+        ap (fst · ap (fst · ap (F S) (ap (F K) (F I))) snd) snd
+          ∼⟨ CC.∼· (CC.∼pair (CC.∼· CC.∼refl
+               (CC.∼· (CC.∼pair (ap· fst (F S) (ap (F K) (F I))) CC.∼refl) CC.∼refl)) CC.∼refl) CC.∼refl ⟩
+        ap (fst · ap (ap (fst · F S) (fst · ap (F K) (F I))) snd) snd
+          ∼⟨ CC.∼· (CC.∼pair (CC.∼· CC.∼refl
+               (CC.∼· (CC.∼pair (CC.∼· (CC.∼pair CC.∼refl (ap· fst (F K) (F I))) CC.∼refl) CC.∼refl) CC.∼refl)) CC.∼refl) CC.∼refl ⟩
+        ap (fst · ap (ap (fst · F S) (ap (fst · F K) (fst · F I))) snd) snd
+          ∼⟨ CC.∼· (CC.∼pair (ap· fst (ap (fst · F S) (ap (fst · F K) (fst · F I))) snd) CC.∼refl) CC.∼refl ⟩
+        ap (ap (fst · ap (fst · F S) (ap (fst · F K) (fst · F I))) (fst · snd)) snd
+          ∼⟨ CC.∼· (CC.∼pair (CC.∼· (CC.∼pair (ap· fst (fst · F S) (ap (fst · F K) (fst · F I))) CC.∼refl) CC.∼refl) CC.∼refl) CC.∼refl ⟩
+        ap (ap (ap (fst · (fst · F S)) (fst · ap (fst · F K) (fst · F I))) g) snd
+          ∼⟨ CC.∼· (CC.∼pair (CC.∼· (CC.∼pair (CC.∼· (CC.∼pair (CC.∼sym (CC.assoc fst fst (F S)))
+               (ap· fst (fst · F K) (fst · F I))) CC.∼refl) CC.∼refl) CC.∼refl) CC.∼refl) CC.∼refl ⟩
+        ap (ap (ap (e · F S) (ap (fst · (fst · F K)) (fst · (fst · F I)))) g) a
+          ∼⟨ CC.∼· (CC.∼pair (CC.∼· (CC.∼pair (CC.∼· (CC.∼pair CC.∼refl
+               (CC.∼· (CC.∼pair (CC.∼sym (CC.assoc fst fst (F K))) (CC.∼sym (CC.assoc fst fst (F I)))) CC.∼refl))
+               CC.∼refl) CC.∼refl) CC.∼refl) CC.∼refl) CC.∼refl ⟩
+        ap (ap (ap (e · F S) (ap (e · F K) (e · F I))) g) a
+          ∼⟨ sβ e (ap (e · F K) (e · F I)) g a ⟩
+        ap (ap (ap (e · F K) (e · F I)) a) (ap g a)
+          ∼⟨ CC.∼· (CC.∼pair (kβ e (e · F I) a) CC.∼refl) CC.∼refl ⟩
+        ap (e · F I) (ap g a)
+          ∼⟨ iβ e (ap g a) ⟩
+        ap g a ∎∼
+  -- The remaining `lam*` cases follow the exact recipe worked out for `lamIβ`
+  -- and `lamText` above: apply CC `funext` once per arrow of the type (2 for
+  -- lamη/lamP, 3 for lamKβ/lamwk/lamP₁/lamP₂, 4 for lamSβ), push the projections
+  -- `funext` introduces through the `F`-application tree with `ap·`/`assoc`, and
+  -- reduce both towers to a common normal form with the generalized combinator
+  -- laws `iβ`/`kβ`/`sβ`/`pβ`/`p₁β`/`p₂β`.  Each is only bookkeeping, but the
+  -- congruence nesting is long (lamSβ especially), so they are left open.
   F∼ CL.lamKβ = {!!}
   F∼ CL.lamSβ = {!!}
   F∼ CL.lamwk = {!!}
@@ -260,7 +390,9 @@ module _ {n : ℕ} {Γ : Con' n} where
   F∼ CL.lamP₁ = {!!}
   F∼ CL.lamP₂ = {!!}
   F∼ CL.lamP = {!!}
-  F∼ CL.lamText = {!!}
+  -- After two CC funexts the goal is between two maps into 𝟙, and `text` makes
+  -- both equal to `term`.
+  F∼ CL.lamText = funext (funext (CC.∼trans (CC.text _) (CC.∼sym (CC.text _))))
 
   F∼ (CL.∼$ p q) = CC.∼· (CC.∼pair (F∼ p) (F∼ q)) CC.∼refl
   F∼ CL.∼refl = CC.∼refl
@@ -448,12 +580,134 @@ module _ {n : ℕ} {Γ : Con n} where
 -- the statements typecheck as expected.
 
 -- A CL term is recovered from its global element by evaluating it at the point.
--- By induction on t; each combinator case unfolds to a closed tower (e.g.
--- G (F I) = S $ (K $ (S $ (K $ P₂))) $ P) whose reduction to I needs the same
--- `lam*` machinery as the holes above.
-GF : {n : ℕ} {A : Ty n} (t : CL.Tm ε' A) → (G (F t) $ T) CL.∼ t
-GF t = {!!}
+-- By induction on t: the application case is a pure β-computation (`evApp`), and
+-- each combinator case reduces its closed tower to the combinator via CL's
+-- functional extensionality.
+module _ {n : ℕ} where
 
--- A CC morphism is recovered from its name by uncurrying.
-FG : {n : ℕ} {A B : Ty n} (f : CC.Tm ε (A , B)) → F (G f) CC.∼ abs (snd · f)
-FG f = {!!}
+  open CL
+  open CL.∼-Reasoning {Γ = ε' {n}}
+
+  -- Evaluating the image of an application: G of a CC application, applied to the
+  -- point, is the two evaluated points applied.  No funext -- pure β.
+  evApp : {A B : Ty n} (a : CC.Tm ε (𝟙 , A ⇒ B)) (b : CC.Tm ε (𝟙 , A)) →
+          (G (CC.pair a b CC.· CC.app) $ T) ∼ (G a $ T) $ (G b $ T)
+  evApp a b = begin∼
+    S $ (K $ (S $ P₁ $ P₂)) $ (S $ (S $ (K $ P) $ G a) $ G b) $ T
+      ∼⟨ Sβ _ _ _ ⟩
+    K $ (S $ P₁ $ P₂) $ T $ (S $ (S $ (K $ P) $ G a) $ G b $ T)
+      ∼⟨ ∼$ (Kβ _ _) ∼refl ⟩
+    (S $ P₁ $ P₂) $ (S $ (S $ (K $ P) $ G a) $ G b $ T)
+      ∼⟨ ∼$ ∼refl (Sβ _ _ _) ⟩
+    (S $ P₁ $ P₂) $ ((S $ (K $ P) $ G a $ T) $ (G b $ T))
+      ∼⟨ ∼$ ∼refl (∼$ (Sβ _ _ _) ∼refl) ⟩
+    (S $ P₁ $ P₂) $ ((K $ P $ T $ (G a $ T)) $ (G b $ T))
+      ∼⟨ ∼$ ∼refl (∼$ (∼$ (Kβ _ _) ∼refl) ∼refl) ⟩
+    (S $ P₁ $ P₂) $ ((P $ (G a $ T)) $ (G b $ T))
+      ∼⟨ Sβ _ _ _ ⟩
+    P₁ $ (P $ (G a $ T) $ (G b $ T)) $ (P₂ $ (P $ (G a $ T) $ (G b $ T)))
+      ∼⟨ ∼$ (P₁β _ _) (P₂β _ _) ⟩
+    (G a $ T) $ (G b $ T) ∎∼
+
+  GF : {A : Ty n} (t : CL.Tm ε' A) → (G (F t) $ T) ∼ t
+
+  GF T = Kβ T T
+
+  GF I = ∼trans redI (CL.funext (∼trans redz (∼sym (Iβ (var here')))))
+    where
+      redI : (G (F I) $ T) ∼ (S $ (K $ P₂) $ (P $ T))
+      redI = ∼trans (Sβ _ _ _) (∼$ (Kβ _ _) ∼refl)
+
+      redz : (wk (S $ (K $ P₂) $ (P $ T)) $ var here') ∼ var here'
+      redz = ∼trans (Sβ _ _ _) (∼trans (∼$ (Kβ _ _) ∼refl) (P₂β _ _))
+
+  GF P₁ = ∼trans redP₁ (CL.funext redz)
+    where
+      redP₁ : (G (F P₁) $ T) ∼ (S $ (K $ (S $ (K $ P₁) $ P₂)) $ (P $ T))
+      redP₁ = ∼trans (Sβ _ _ _) (∼$ (Kβ _ _) ∼refl)
+
+      redz : (wk (S $ (K $ (S $ (K $ P₁) $ P₂)) $ (P $ T)) $ var here') ∼ (P₁ $ var here')
+      redz = ∼trans (Sβ _ _ _) (∼trans (∼$ (Kβ _ _) ∼refl)
+               (∼trans (Sβ _ _ _) (∼trans (∼$ (Kβ _ _) ∼refl) (∼$ ∼refl (P₂β _ _)))))
+
+  GF P₂ = ∼trans redP₂ (CL.funext redz)
+    where
+      redP₂ : (G (F P₂) $ T) ∼ (S $ (K $ (S $ (K $ P₂) $ P₂)) $ (P $ T))
+      redP₂ = ∼trans (Sβ _ _ _) (∼$ (Kβ _ _) ∼refl)
+
+      redz : (wk (S $ (K $ (S $ (K $ P₂) $ P₂)) $ (P $ T)) $ var here') ∼ (P₂ $ var here')
+      redz = ∼trans (Sβ _ _ _) (∼trans (∼$ (Kβ _ _) ∼refl)
+               (∼trans (Sβ _ _ _) (∼trans (∼$ (Kβ _ _) ∼refl) (∼$ ∼refl (P₂β _ _)))))
+
+  -- Same recipe as I/P₁/P₂ but with much larger towers: `G (F K)`, `G (F S)`,
+  -- `G (F P)` are deep nests of `S $ (K $ (S $ (K $ …))) $ P` (one layer per
+  -- `abs` in F c).  Reduce `G (F c) $ T` applied to the combinator's arity of
+  -- fresh variables (2 for K/P, 3 for S) with `Sβ`/`Kβ`/`P₁β`/`P₂β`, closing
+  -- under `funext` (twice for K/P, three times for S).  Left open: mechanical
+  -- but long.
+  GF K = {!!}
+  GF S = {!!}
+  GF P = {!!}
+
+  GF (t $ u) = ∼trans (evApp (F t) (F u)) (∼$ (GF t) (GF u))
+
+-- A CC morphism is recovered from its name (uncurried): `F (G f)` is the point
+-- naming `f`, i.e. the curry of `f` precomposed with 𝟙 × A ≅ A.
+module _ {n : ℕ} where
+
+  open CC
+  open CC.∼-Reasoning {Γ = ε {n}}
+
+  FG : {A B : Ty n} (f : CC.Tm ε (A , B)) → F (G f) ∼ abs (snd · f)
+
+  -- `ε` has no variables.
+  FG (var ())
+
+  -- G id = I, F I = abs snd; snd ∼ snd · id.
+  FG id = ∼abs (∼sym (unitr snd))
+
+  -- G fst = P₁, F P₁ = abs (snd · fst); on the nose.
+  FG fst = ∼refl
+
+  -- G snd = P₂, F P₂ = abs (snd · snd); on the nose.
+  FG snd = ∼refl
+
+  -- The computational base cases (`term`, `app`) and the inductive cases
+  -- (`_·_`, `pair`, `abs`) name composites/products/curries of morphisms.  Each
+  -- reduces `F (G f)` with the CC β-lemmas (`beta`/`ap·`/…) and, for the
+  -- inductive ones, the induction hypotheses `FG …`, to `abs (snd · f)`.  These
+  -- mirror the `F∼ lam*` reductions and are left open (long).
+  -- G term = K T; one funext, `kβ`, then both maps into 𝟙 collapse by `text`.
+  FG term = funext (∼trans redL (∼sym (aβ (snd · term))))
+    where
+      redL : ap (fst · F (K $ T)) snd ∼ (snd · term)
+      redL = begin∼
+        ap (fst · ap (F K) term) snd
+          ∼⟨ ∼· (∼pair (ap· fst (F K) term) ∼refl) ∼refl ⟩
+        ap (ap (fst · F K) (fst · term)) snd
+          ∼⟨ kβ fst (fst · term) snd ⟩
+        fst · term
+          ∼⟨ ∼trans (text (fst · term)) (∼sym (text (snd · term))) ⟩
+        snd · term ∎∼
+
+  FG (f · g) = {!!}
+  FG (pair f g) = {!!}
+  FG (abs f) = {!!}
+
+  -- G app = S P₁ P₂; one funext, then the S/P₁/P₂ laws, and `snd` is its own
+  -- pairing (pext).
+  FG {A = A0} app = funext (∼trans redL (∼sym (aβ (snd · app))))
+    where
+      redL : ap (fst · F (S $ P₁ $ P₂)) snd ∼ (snd · app)
+      redL = begin∼
+        ap (fst · ap (ap (F S) (F P₁)) (F P₂)) snd
+          ∼⟨ ∼· (∼pair (ap· fst (ap (F S) (F P₁)) (F P₂)) ∼refl) ∼refl ⟩
+        ap (ap (fst · ap (F S) (F P₁)) (fst · F P₂)) snd
+          ∼⟨ ∼· (∼pair (∼· (∼pair (ap· fst (F S) (F P₁)) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+        ap (ap (ap (fst · F S) (fst · F P₁)) (fst · F P₂)) snd
+          ∼⟨ sβ fst (fst · F P₁) (fst · F P₂) snd ⟩
+        ap (ap (fst · F P₁) snd) (ap (fst · F P₂) snd)
+          ∼⟨ ∼· (∼pair (p₁β fst snd) (p₂β fst snd)) ∼refl ⟩
+        pair (snd · fst) (snd · snd) · app
+          ∼⟨ ∼· (∼sym (pext snd)) ∼refl ⟩
+        snd · app ∎∼
