@@ -247,12 +247,11 @@ module _ {n : ℕ} {Γ : Con' n} where
       ∼⟨ CC.∼sym (FP (P₁ $ t) (P₂ $ t)) ⟩
     F (P $ (P₁ $ t) $ (P₂ $ t)) ∎∼
 
-  F∼ (CL.Tη t) = CC.text (F t)
-
-  -- The `lam*` rules.  Unlike the β/η rules above these are equations between
-  -- *partially applied* S/K towers, so both sides translate to global elements
-  -- of an exponential and cannot simply be β-reduced to a point: they have to
-  -- be compared under `funext` above, after applying them to generic arguments.
+  -- The `lam*` rules (including the terminal's `lamText`).  Unlike the β/η rules
+  -- above these are equations between *partially applied* S/K towers, so both
+  -- sides translate to global elements of an exponential and cannot simply be
+  -- β-reduced to a point: they have to be compared under `funext` above, after
+  -- applying them to generic arguments.
   F∼ CL.lamIβ = {!!}
   F∼ CL.lamKβ = {!!}
   F∼ CL.lamSβ = {!!}
@@ -261,7 +260,7 @@ module _ {n : ℕ} {Γ : Con' n} where
   F∼ CL.lamP₁ = {!!}
   F∼ CL.lamP₂ = {!!}
   F∼ CL.lamP = {!!}
-  F∼ CL.lamT = {!!}
+  F∼ CL.lamText = {!!}
 
   F∼ (CL.∼$ p q) = CC.∼· (CC.∼pair (F∼ p) (F∼ q)) CC.∼refl
   F∼ CL.∼refl = CC.∼refl
@@ -428,14 +427,9 @@ module _ {n : ℕ} {Γ : Con n} where
           ∼⟨ CL.∼$ (CL.∼$ CL.∼refl (CL.P₁β x0 x1)) (CL.P₂β x0 x1) ⟩
         gf $ x0 $ x1 ∎∼
 
-  -- THE ONE GENUINE GAP.  `funext` reduces this to `wk (G f) $ x ∼ T`, which is
-  -- `Tη` — but discharging it goes through `ξ (Tη …)`, the single hole left in
-  -- CL.agda.  See the long note there: unlike every other CC axiom, the
-  -- terminal's `text` has no matching `lam*` rule and is not derivable from the
-  -- current set; it needs the ξ-image of `Tη` added as a primitive.  Written via
-  -- `funext` so the reduction is on record, but it inherits that one hole.
-  G∼ (CC.text f) =
-    CL.funext (CL.∼trans (CL.Tη (CL.wk (G f) $ CL.var here')) (CL.∼sym (CL.Kβ T (CL.var here'))))
+  -- f ∼ term.  `G f : A ⇒ 𝟙`, so this is exactly `lamTη`, the terminal's `lam*`
+  -- rule -- the bracket abstraction of this very `text` axiom.
+  G∼ (CC.text f) = CL.lamTη (G f)
 
   -- Congruence and equivalence closure.
   G∼ (CC.∼· p q) = CL.∼$ (CL.∼$ CL.∼refl (CL.∼$ CL.∼refl (G∼ q))) (G∼ p)

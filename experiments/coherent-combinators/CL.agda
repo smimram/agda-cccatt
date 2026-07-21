@@ -25,7 +25,6 @@ data _∼_ {n : ℕ} {Γ : Con' n} : {A : Ty n} → Tm Γ A → Tm Γ A → Type
   P₁β : {A B : Ty n} (t : Tm Γ A) (u : Tm Γ B) → P₁ $ (P $ t $ u) ∼ t
   P₂β : {A B : Ty n} (t : Tm Γ A) (u : Tm Γ B) → P₂ $ (P $ t $ u) ∼ u
   Pη : {A B : Ty n} (t : Tm Γ (A × B)) → t ∼ P $ (P₁ $ t) $ (P₂ $ t)
-  Tη : (t : Tm Γ 𝟙) → t ∼ T
   lamIβ : {A B : Ty n} → _∼_ {A = (A ⇒ B) ⇒ A ⇒ B}
           (S $ (K $ I))
           I
@@ -50,7 +49,12 @@ data _∼_ {n : ℕ} {Γ : Con' n} : {A : Ty n} → Tm Γ A → Tm Γ A → Type
   lamP : {A B C : Ty n} → _∼_ {A = (A ⇒ B × C) ⇒ A ⇒ B × C}
          (S $ (S $ (K $ S) $ (S $ (K $ (S $ (K $ P))) $ (S $ (K $ P₁)))) $ (S $ (K $ P₂)))
          I
-  lamT : (K $ T) ∼ I
+  -- The `lam*` rule for the terminal object: bracket abstraction of CC's `text`
+  -- axiom, `lam_a (a) ∼ lam_a (K $ T)`.  This is the one terminal primitive; the
+  -- η-rule `Tη`, `lamT`, and the schematic `lamTη` are all derived from it below.
+  lamText : {A : Ty n} → _∼_ {A = (A ⇒ 𝟙) ⇒ A ⇒ 𝟙}
+            I
+            (K $ (K $ T))
   ∼$ : {A B : Ty n} {t t' : Tm Γ (A ⇒ B)} {u u' : Tm Γ A} → t ∼ t' → u ∼ u' → t $ u ∼ t' $ u'
   ∼refl : {A : Ty n} {t : Tm Γ A} → t ∼ t
   ∼sym : {A : Ty n} {t u : Tm Γ A} → t ∼ u → u ∼ t
@@ -271,6 +275,19 @@ module _ {n : ℕ} {Γ : Con' n} where
       ∼⟨ ∼$ (∼$ ∼refl (∼$ (Kβ _ _) ∼refl)) ∼refl ⟩
     S $ (S $ (K $ P) $ (S $ (K $ P₁) $ a)) $ (S $ (K $ P₂) $ a) ∎∼
 
+  -- The terminal object.  `lamText` is the single primitive; `lamTη` ("A ⇒ 𝟙 is
+  -- terminal"), `Tη` ("𝟙 is terminal") and `lamT` all follow from it, using only
+  -- the β-rules -- no `funext`, so there is no circularity.
+
+  lamTη : {A : Ty n} (h : Tm Γ (A ⇒ 𝟙)) → h ∼ K $ T
+  lamTη h = ∼trans (∼sym (Iβ h)) (∼trans (∼$ lamText ∼refl) (Kβ (K $ T) h))
+
+  Tη : (t : Tm Γ 𝟙) → t ∼ T
+  Tη t = ∼trans (∼sym (Kβ t T)) (∼trans (∼$ (lamTη (K $ t)) ∼refl) (Kβ T T))
+
+  lamT : _∼_ {A = 𝟙 ⇒ 𝟙} (K $ T) I
+  lamT = ∼sym (lamTη I)
+
   -- The ξ rule: bracket abstraction is compatible with the equivalence.  The
   -- induction is on the derivation, and each CL axiom is discharged by exactly
   -- one `lam*` rule -- which is what that family of rules is for.
@@ -336,29 +353,6 @@ module _ {n : ℕ} {Γ : Con' n} where
   ξ (P₂β t u) = psnd∼ (lam t) (lam u)
   ξ (Pη t) = pext∼ (lam t)
 
-  -- THE ONE CASE THAT DOES NOT GO THROUGH.
-  --
-  -- The goal is `lam t ∼ K $ T` for an arbitrary t : Tm (Γ ▹' A) 𝟙, i.e. that
-  -- every term of type A ⇒ 𝟙 obtained by abstraction is K $ T.
-  --
-  -- Every other CL axiom has its ξ-image among the `lam*` rules, but Tη's does
-  -- not: Tη is a schema in t, so its ξ-image is a schema too and cannot be a
-  -- closed tower equation.  `lamT : K $ T ∼ I` only typechecks at 𝟙 ⇒ 𝟙, which
-  -- is exactly the `t = var here'` case (with A = 𝟙) and nothing more.
-  --
-  -- Proving it with `funext` below is circular, and Agda rejects it: funext
-  -- would be applied to `Tη (wk (lam t) $ var here')`, which is not a
-  -- subderivation, so ξ/funext fail the termination check.  Induction on t
-  -- instead handles `var here'` (= lamT), `var (drop' x)` (= Tη under K) and
-  -- `T`, but the application case t = u $ v needs the same statement at
-  -- A ⇒ B ⇒ 𝟙, one arrow larger, so that induction does not terminate either.
-  --
-  -- Closing this needs a new rule in the list above, namely the ξ-image of Tη:
-  --   lamTη : {A : Ty n} (h : Tm Γ (A ⇒ 𝟙)) → h ∼ K $ T
-  -- Left open rather than added, since whether the `lam*` family is complete
-  -- for the terminal object is precisely the question this experiment asks.
-  ξ (Tη t) = {!!}
-
   -- The `lam*` rules are equations between closed towers of constants, so both
   -- sides are weakenings and `lam-wk` reduces the goal to the rule itself.
   ξ lamIβ = ∼trans (lam-wk (S $ (K $ I))) (∼trans (∼$ ∼refl lamIβ) (∼sym (lam-wk I)))
@@ -375,7 +369,7 @@ module _ {n : ℕ} {Γ : Con' n} where
               (∼trans (∼$ ∼refl lamP₂) (∼sym (lam-wk (K $ I))))
   ξ lamP = ∼trans (lam-wk (S $ (S $ (K $ S) $ (S $ (K $ (S $ (K $ P))) $ (S $ (K $ P₁)))) $ (S $ (K $ P₂))))
              (∼trans (∼$ ∼refl lamP) (∼sym (lam-wk I)))
-  ξ lamT = ∼trans (lam-wk (K $ T)) (∼trans (∼$ ∼refl lamT) (∼sym (lam-wk I)))
+  ξ lamText = ∼trans (lam-wk I) (∼trans (∼$ ∼refl lamText) (∼sym (lam-wk (K $ (K $ T)))))
 
   ξ (∼$ p q) = ∼$ (∼$ ∼refl (ξ p)) (ξ q)
   ξ ∼refl = ∼refl
@@ -383,8 +377,8 @@ module _ {n : ℕ} {Γ : Con' n} where
   ξ (∼trans p q) = ∼trans (ξ p) (ξ q)
 
   -- Functional extensionality -- the (ζ) rule of the course notes: two terms of
-  -- arrow type are equivalent as soon as they agree on a fresh variable.  Note
-  -- that this rests on ξ, hence on the open `Tη` case above.
+  -- arrow type are equivalent as soon as they agree on a fresh variable.  `ξ` is
+  -- now total, so this is a complete proof.
   funext : {A B : Ty n} {h h' : Tm Γ (A ⇒ B)} →
            (wk h $ var here') ∼ (wk h' $ var here') → h ∼ h'
   funext {h = h} {h' = h'} p = ∼trans (∼sym (lam-η h)) (∼trans (ξ p) (lam-η h'))
