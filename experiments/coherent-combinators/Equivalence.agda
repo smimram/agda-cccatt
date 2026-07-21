@@ -140,6 +140,104 @@ module _ {n : ℕ} {Γ : Con n} where
         e · ap f a ∼ ap (e · f) (e · a)
   ap· = appComp
 
+  -- Congruence for `ap`.  The reductions below rewrite deep inside spines of
+  -- applications, and `∼ap` is what keeps that bearable: a rewrite `k` levels
+  -- down is `∼ap (∼ap … (∼ap k ∼refl) …) ∼refl`.
+  ∼ap : {X A B : Ty n} {f f' : Tm Γ (X , A ⇒ B)} {a a' : Tm Γ (X , A)} →
+        f ∼ f' → a ∼ a' → ap f a ∼ ap f' a'
+  ∼ap p q = ∼· (∼pair p q) ∼refl
+
+  --- Extensionality in the form the closed `lam*` equations need.
+  --
+  -- Both sides of a `lam*` rule are global elements of an iterated exponential,
+  -- so they can only be compared after being applied to as many generic
+  -- arguments as the type has arrows.  Peeling one arrow off with `funext`
+  -- introduces a projection in front of the term, which is why the statement has
+  -- to be *generalized over an environment* `e`: the projection is then absorbed
+  -- into `e` and the statement one arrow deeper applies verbatim.
+  --
+  -- `pushₖ` does that absorption for a spine of `k` applications, and `extₖ`
+  -- turns a statement about `k` arguments into one about `k-1`; `ext0` finally
+  -- instantiates the environment at the identity.
+
+  push1 : {W Y X A B : Ty n} (e' : Tm Γ (W , Y)) (e : Tm Γ (Y , X))
+          (h : Tm Γ (X , A ⇒ B)) (p : Tm Γ (Y , A)) →
+          e' · ap (e · h) p ∼ ap ((e' · e) · h) (e' · p)
+  push1 e' e h p = ∼trans (ap· e' (e · h) p) (∼ap (∼sym (assoc e' e h)) ∼refl)
+
+  push2 : {W Y X A B C : Ty n} (e' : Tm Γ (W , Y)) (e : Tm Γ (Y , X))
+          (h : Tm Γ (X , A ⇒ B ⇒ C)) (p : Tm Γ (Y , A)) (q : Tm Γ (Y , B)) →
+          e' · ap (ap (e · h) p) q ∼ ap (ap ((e' · e) · h) (e' · p)) (e' · q)
+  push2 e' e h p q = ∼trans (ap· e' (ap (e · h) p) q) (∼ap (push1 e' e h p) ∼refl)
+
+  push3 : {W Y X A B C D : Ty n} (e' : Tm Γ (W , Y)) (e : Tm Γ (Y , X))
+          (h : Tm Γ (X , A ⇒ B ⇒ C ⇒ D)) (p : Tm Γ (Y , A)) (q : Tm Γ (Y , B)) (r : Tm Γ (Y , C)) →
+          e' · ap (ap (ap (e · h) p) q) r
+          ∼ ap (ap (ap ((e' · e) · h) (e' · p)) (e' · q)) (e' · r)
+  push3 e' e h p q r = ∼trans (ap· e' (ap (ap (e · h) p) q) r) (∼ap (push2 e' e h p q) ∼refl)
+
+  ext0 : {X A : Ty n} {h h' : Tm Γ (X , A)} →
+         ({Y : Ty n} (e : Tm Γ (Y , X)) → e · h ∼ e · h') → h ∼ h'
+  ext0 {h = h} {h' = h'} hyp = ∼trans (∼sym (unitl h)) (∼trans (hyp id) (unitl h'))
+
+  ext1 : {X A B : Ty n} {h h' : Tm Γ (X , A ⇒ B)} →
+         ({Y : Ty n} (e : Tm Γ (Y , X)) (p : Tm Γ (Y , A)) → ap (e · h) p ∼ ap (e · h') p) →
+         {Y : Ty n} (e : Tm Γ (Y , X)) → e · h ∼ e · h'
+  ext1 {h = h} {h' = h'} hyp e = funext
+    (∼trans (∼ap (∼sym (assoc fst e h)) ∼refl)
+      (∼trans (hyp (fst · e) snd) (∼ap (assoc fst e h') ∼refl)))
+
+  ext2 : {X A B C : Ty n} {h h' : Tm Γ (X , A ⇒ B ⇒ C)} →
+         ({Y : Ty n} (e : Tm Γ (Y , X)) (p : Tm Γ (Y , A)) (q : Tm Γ (Y , B)) →
+            ap (ap (e · h) p) q ∼ ap (ap (e · h') p) q) →
+         {Y : Ty n} (e : Tm Γ (Y , X)) (p : Tm Γ (Y , A)) → ap (e · h) p ∼ ap (e · h') p
+  ext2 {h = h} {h' = h'} hyp e p = funext
+    (∼trans (∼ap (push1 fst e h p) ∼refl)
+      (∼trans (hyp (fst · e) (fst · p) snd) (∼ap (∼sym (push1 fst e h' p)) ∼refl)))
+
+  ext3 : {X A B C D : Ty n} {h h' : Tm Γ (X , A ⇒ B ⇒ C ⇒ D)} →
+         ({Y : Ty n} (e : Tm Γ (Y , X)) (p : Tm Γ (Y , A)) (q : Tm Γ (Y , B)) (r : Tm Γ (Y , C)) →
+            ap (ap (ap (e · h) p) q) r ∼ ap (ap (ap (e · h') p) q) r) →
+         {Y : Ty n} (e : Tm Γ (Y , X)) (p : Tm Γ (Y , A)) (q : Tm Γ (Y , B)) →
+            ap (ap (e · h) p) q ∼ ap (ap (e · h') p) q
+  ext3 {h = h} {h' = h'} hyp e p q = funext
+    (∼trans (∼ap (push2 fst e h p q) ∼refl)
+      (∼trans (hyp (fst · e) (fst · p) (fst · q) snd)
+              (∼ap (∼sym (push2 fst e h' p q)) ∼refl)))
+
+  ext4 : {X A B C D E : Ty n} {h h' : Tm Γ (X , A ⇒ B ⇒ C ⇒ D ⇒ E)} →
+         ({Y : Ty n} (e : Tm Γ (Y , X)) (p : Tm Γ (Y , A)) (q : Tm Γ (Y , B))
+            (r : Tm Γ (Y , C)) (s : Tm Γ (Y , D)) →
+            ap (ap (ap (ap (e · h) p) q) r) s ∼ ap (ap (ap (ap (e · h') p) q) r) s) →
+         {Y : Ty n} (e : Tm Γ (Y , X)) (p : Tm Γ (Y , A)) (q : Tm Γ (Y , B)) (r : Tm Γ (Y , C)) →
+            ap (ap (ap (e · h) p) q) r ∼ ap (ap (ap (e · h') p) q) r
+  ext4 {h = h} {h' = h'} hyp e p q r = funext
+    (∼trans (∼ap (push3 fst e h p q r) ∼refl)
+      (∼trans (hyp (fst · e) (fst · p) (fst · q) (fst · r) snd)
+              (∼ap (∼sym (push3 fst e h' p q r)) ∼refl)))
+
+  -- The `F`-images of the CL combinators, spelled out as CC terms at an
+  -- arbitrary context: `F I`, `F K`, … unfold to exactly these, so the laws and
+  -- reductions stated with them apply to the `F`-images on the nose.
+  fI : {A : Ty n} → Tm Γ (𝟙 , A ⇒ A)
+  fI = abs snd
+
+  fK : {A B : Ty n} → Tm Γ (𝟙 , A ⇒ B ⇒ A)
+  fK = abs (abs (fst · snd))
+
+  fS : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ B ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ C)
+  fS = abs (abs (abs (pair (pair (fst · fst · snd) snd · app)
+                           (pair (fst · snd) snd · app) · app)))
+
+  fP₁ : {A B : Ty n} → Tm Γ (𝟙 , A × B ⇒ A)
+  fP₁ = abs (snd · fst)
+
+  fP₂ : {A B : Ty n} → Tm Γ (𝟙 , A × B ⇒ B)
+  fP₂ = abs (snd · snd)
+
+  fP : {A B : Ty n} → Tm Γ (𝟙 , A ⇒ B ⇒ A × B)
+  fP = abs (abs (pair (fst · snd) snd))
+
   -- F I = abs snd
   iβ : {X A : Ty n} (e : Tm Γ (X , 𝟙)) (p : Tm Γ (X , A)) →
        ap (e · abs snd) p ∼ p
@@ -210,6 +308,48 @@ module _ {n : ℕ} {Γ : Con n} where
 
       red-fs : e3 · (fst · snd) ∼ q
       red-fs = ∼trans (∼sym (assoc _ _ _)) (∼trans (∼· (pfst e2 r) ∼refl) (psnd e1 q))
+
+  --- Reduction of the closed `lam*` towers.
+  --
+  -- Each `lam*` rule of CL is an equation between two closed S/K towers; under
+  -- `F` both sides become global elements of an iterated exponential.  The
+  -- lemmas below compute what a side becomes once it sits under an environment
+  -- `e` and is applied to as many generic arguments as its type has arrows;
+  -- `F∼` then glues the two computations together with `ext0`/`ext1`/… .
+  --
+  -- Every step is one of exactly two moves: `ap·`, which distributes `e` over an
+  -- application node of the tower, or one of `iβ`/`kβ`/`sβ`/`pβ`/`p₁β`/`p₂β`,
+  -- which fires a combinator once all its arguments are present.
+
+  -- lamKβ : S (K S) (S (K K)) ∼ K,  at (A ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ C.
+  fLKβ : {A B C : Ty n} → Tm Γ (𝟙 , (A ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ C)
+  fLKβ = ap (ap fS (ap fK fS)) (ap fS (ap fK fK))
+
+  redKβ : {X A B C : Ty n} (e : Tm Γ (X , 𝟙))
+          (p : Tm Γ (X , A ⇒ C)) (q : Tm Γ (X , A ⇒ B)) (r : Tm Γ (X , A)) →
+          ap (ap (ap (e · fLKβ) p) q) r ∼ ap p r
+  redKβ e p q r = begin∼
+    ap (ap (ap (e · ap (ap fS (ap fK fS)) (ap fS (ap fK fK))) p) q) r
+      ∼⟨ ∼ap (∼ap (∼ap (ap· e (ap fS (ap fK fS)) (ap fS (ap fK fK))) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (e · ap fS (ap fK fS)) (e · ap fS (ap fK fK))) p) q) r
+      ∼⟨ ∼ap (∼ap (∼ap (∼ap (ap· e fS (ap fK fS)) (ap· e fS (ap fK fK))) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fS) (e · ap fK fS)) (ap (e · fS) (e · ap fK fK))) p) q) r
+      ∼⟨ ∼ap (∼ap (∼ap (∼ap (∼ap ∼refl (ap· e fK fS)) (∼ap ∼refl (ap· e fK fK))) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fS) (ap (e · fK) (e · fS)))
+                   (ap (e · fS) (ap (e · fK) (e · fK)))) p) q) r
+      ∼⟨ ∼ap (∼ap (sβ e (ap (e · fK) (e · fS)) (ap (e · fS) (ap (e · fK) (e · fK))) p) ∼refl) ∼refl ⟩
+    ap (ap (ap (ap (ap (e · fK) (e · fS)) p)
+                   (ap (ap (e · fS) (ap (e · fK) (e · fK))) p)) q) r
+      ∼⟨ ∼ap (∼ap (∼ap (kβ e (e · fS) p) ∼refl) ∼refl) ∼refl ⟩
+    ap (ap (ap (e · fS) (ap (ap (e · fS) (ap (e · fK) (e · fK))) p)) q) r
+      ∼⟨ sβ e (ap (ap (e · fS) (ap (e · fK) (e · fK))) p) q r ⟩
+    ap (ap (ap (ap (e · fS) (ap (e · fK) (e · fK))) p) r) (ap q r)
+      ∼⟨ ∼ap (sβ e (ap (e · fK) (e · fK)) p r) ∼refl ⟩
+    ap (ap (ap (ap (e · fK) (e · fK)) r) (ap p r)) (ap q r)
+      ∼⟨ ∼ap (∼ap (kβ e (e · fK) r) ∼refl) ∼refl ⟩
+    ap (ap (e · fK) (ap p r)) (ap q r)
+      ∼⟨ kβ e (ap p r) (ap q r) ⟩
+    ap p r ∎∼
 
 --- The translation F preserves the equivalence
 
@@ -383,7 +523,9 @@ module _ {n : ℕ} {Γ : Con' n} where
   -- reduce both towers to a common normal form with the generalized combinator
   -- laws `iβ`/`kβ`/`sβ`/`pβ`/`p₁β`/`p₂β`.  Each is only bookkeeping, but the
   -- congruence nesting is long (lamSβ especially), so they are left open.
-  F∼ CL.lamKβ = {!!}
+  F∼ CL.lamKβ =
+    ext0 (ext1 (ext2 (ext3 (λ e p q r →
+      CC.∼trans (redKβ e p q r) (CC.∼sym (∼ap (kβ e p q) CC.∼refl))))))
   F∼ CL.lamSβ = {!!}
   F∼ CL.lamwk = {!!}
   F∼ CL.lamη = {!!}
@@ -645,9 +787,180 @@ module _ {n : ℕ} where
   -- fresh variables (2 for K/P, 3 for S) with `Sβ`/`Kβ`/`P₁β`/`P₂β`, closing
   -- under `funext` (twice for K/P, three times for S).  Left open: mechanical
   -- but long.
-  GF K = {!!}
-  GF S = {!!}
-  GF P = {!!}
+  -- `F K = abs (abs (fst · snd))`, so `G (F K)` is two `abs`-layers
+  -- `S (K (S (K -))) P` around `G (fst · snd) = S (K P₂) P₁`.  Applying it to `T`
+  -- and then (under two `funext`s) to `x0 x1` builds the environment
+  -- `w1 = P (P T x0) x1` and reads the second component of its first component.
+  GF (K {A = A} {B = B}) = ∼trans redK (CL.funext (CL.funext (∼trans redz (∼sym (Kβ x0 x1)))))
+    where
+      x0 : Tm (ε' {n} ▹' A ▹' B) A
+      x0 = var (drop' here')
+
+      x1 : Tm (ε' {n} ▹' A ▹' B) B
+      x1 = var here'
+
+      w0 : Tm (ε' {n} ▹' A ▹' B) (𝟙 × A)
+      w0 = P $ T $ x0
+
+      w1 : Tm (ε' {n} ▹' A ▹' B) ((𝟙 × A) × B)
+      w1 = P $ w0 $ x1
+
+      -- The body of the inner abstraction, in the extended context.
+      m : Tm (ε' {n} ▹' A ▹' B) ((𝟙 × A) × B ⇒ A)
+      m = S $ (K $ P₂) $ P₁
+
+      redK : (G (F (K {A = A} {B = B})) $ T)
+             ∼ (S $ (K $ (S $ (K $ (S $ (K $ (S $ (K $ P₂) $ P₁)))) $ P)) $ (P $ T))
+      redK = ∼trans (Sβ _ _ _) (∼$ (Kβ _ _) ∼refl)
+
+      redz : (S $ (K $ (S $ (K $ (S $ (K $ (S $ (K $ P₂) $ P₁)))) $ P)) $ (P $ T) $ x0 $ x1) ∼ x0
+      redz =
+        ∼trans (∼$ (comp$ (S $ (K $ (S $ (K $ m))) $ P) (P $ T) x0) ∼refl)
+          (∼trans (∼$ (abs$ m w0) ∼refl)
+            (∼trans (comp$ m (P $ w0) x1)
+              (∼trans (comp$ P₂ P₁ w1)
+                (∼trans (∼$ ∼refl (P₁β w0 x1)) (P₂β T x0)))))
+
+  -- `F P = abs (abs (pair (fst · snd) snd))`: same two `abs`-layers as `K`, but
+  -- the body is a pairing, so `pair$` splits it and the two halves are read off
+  -- the environment `w1 = P (P T x0) x1`.
+  GF (P {A = A} {B = B}) = ∼trans redP (CL.funext (CL.funext redz))
+    where
+      x0 : Tm (ε' {n} ▹' A ▹' B) A
+      x0 = var (drop' here')
+
+      x1 : Tm (ε' {n} ▹' A ▹' B) B
+      x1 = var here'
+
+      w0 : Tm (ε' {n} ▹' A ▹' B) (𝟙 × A)
+      w0 = P $ T $ x0
+
+      w1 : Tm (ε' {n} ▹' A ▹' B) ((𝟙 × A) × B)
+      w1 = P $ w0 $ x1
+
+      -- `G (fst · snd)` and `G (pair (fst · snd) snd)`, at any context.
+      mfs : {Δ : Con' n} → Tm Δ ((𝟙 × A) × B ⇒ A)
+      mfs = S $ (K $ P₂) $ P₁
+
+      mp : {Δ : Con' n} → Tm Δ ((𝟙 × A) × B ⇒ A × B)
+      mp = S $ (S $ (K $ P) $ mfs) $ P₂
+
+      inner : {Δ : Con' n} → Tm Δ (𝟙 × A ⇒ B ⇒ A × B)
+      inner = S $ (K $ (S $ (K $ mp))) $ P
+
+      redP : (G (F (P {A = A} {B = B})) $ T) ∼ (S $ (K $ inner) $ (P $ T))
+      redP = ∼trans (Sβ _ _ _) (∼$ (Kβ _ _) ∼refl)
+
+      -- `S (K P₂) P₁` applied to the environment picks out `x0`.
+      redfs : (mfs $ w1) ∼ x0
+      redfs = ∼trans (comp$ P₂ P₁ w1) (∼trans (∼$ ∼refl (P₁β w0 x1)) (P₂β T x0))
+
+      redz : (S $ (K $ inner) $ (P $ T) $ x0 $ x1) ∼ (P $ x0 $ x1)
+      redz =
+        ∼trans (∼$ (comp$ inner (P $ T) x0) ∼refl)
+          (∼trans (∼$ (abs$ mp w0) ∼refl)
+            (∼trans (comp$ mp (P $ w0) x1)
+              (∼trans (pair$ mfs P₂ w1)
+                      (∼$ (∼$ ∼refl redfs) (P₂β w0 x1)))))
+
+  -- `F S = abs (abs (abs BODY))`: three `abs`-layers, and `BODY` is a tree of two
+  -- CC applications, so `G BODY` is a nest of `S (K (S P₁ P₂)) -` (the image of
+  -- `app`) over pairings.  Under three `funext`s everything reduces against the
+  -- environment `w2 = P (P (P T x0) x1) x2`.
+  GF (S {A = A} {B = B} {C = C}) =
+    ∼trans redS (CL.funext (CL.funext (CL.funext (∼trans redz (∼sym (Sβ x0 x1 x2))))))
+    where
+      Δ : Con' n
+      Δ = ε' ▹' (A ⇒ B ⇒ C) ▹' (A ⇒ B) ▹' A
+
+      x0 : Tm Δ (A ⇒ B ⇒ C)
+      x0 = var (drop' (drop' here'))
+
+      x1 : Tm Δ (A ⇒ B)
+      x1 = var (drop' here')
+
+      x2 : Tm Δ A
+      x2 = var here'
+
+      w0 : Tm Δ (𝟙 × (A ⇒ B ⇒ C))
+      w0 = P $ T $ x0
+
+      w1 : Tm Δ ((𝟙 × (A ⇒ B ⇒ C)) × (A ⇒ B))
+      w1 = P $ w0 $ x1
+
+      w2 : Tm Δ (((𝟙 × (A ⇒ B ⇒ C)) × (A ⇒ B)) × A)
+      w2 = P $ w1 $ x2
+
+      -- `G app`, at whichever exponential it is used.
+      gapp : {Δ' : Con' n} {U V : Ty n} → Tm Δ' ((U ⇒ V) × U ⇒ V)
+      gapp = S $ P₁ $ P₂
+
+      -- `G (fst · fst · snd)` and `G (fst · snd)`: the two projections of the
+      -- environment that `BODY` reads.
+      gffs : {Δ' : Con' n} → Tm Δ' (((𝟙 × (A ⇒ B ⇒ C)) × (A ⇒ B)) × A ⇒ A ⇒ B ⇒ C)
+      gffs = S $ (K $ P₂) $ (S $ (K $ P₁) $ P₁)
+
+      gfs : {Δ' : Con' n} → Tm Δ' (((𝟙 × (A ⇒ B ⇒ C)) × (A ⇒ B)) × A ⇒ A ⇒ B)
+      gfs = S $ (K $ P₂) $ P₁
+
+      -- The two operands of the outer application in `BODY`, then `BODY` itself.
+      gU : {Δ' : Con' n} → Tm Δ' (((𝟙 × (A ⇒ B ⇒ C)) × (A ⇒ B)) × A ⇒ B ⇒ C)
+      gU = S $ (K $ gapp) $ (S $ (S $ (K $ P) $ gffs) $ P₂)
+
+      gV : {Δ' : Con' n} → Tm Δ' (((𝟙 × (A ⇒ B ⇒ C)) × (A ⇒ B)) × A ⇒ B)
+      gV = S $ (K $ gapp) $ (S $ (S $ (K $ P) $ gfs) $ P₂)
+
+      gBODY : {Δ' : Con' n} → Tm Δ' (((𝟙 × (A ⇒ B ⇒ C)) × (A ⇒ B)) × A ⇒ C)
+      gBODY = S $ (K $ gapp) $ (S $ (S $ (K $ P) $ gU) $ gV)
+
+      -- The three `abs`-layers.
+      tw1 : {Δ' : Con' n} → Tm Δ' ((𝟙 × (A ⇒ B ⇒ C)) × (A ⇒ B) ⇒ A ⇒ C)
+      tw1 = S $ (K $ (S $ (K $ gBODY))) $ P
+
+      tw2 : {Δ' : Con' n} → Tm Δ' (𝟙 × (A ⇒ B ⇒ C) ⇒ (A ⇒ B) ⇒ A ⇒ C)
+      tw2 = S $ (K $ (S $ (K $ tw1))) $ P
+
+      redS : (G (F (S {A = A} {B = B} {C = C})) $ T) ∼ (S $ (K $ tw2) $ (P $ T))
+      redS = ∼trans (Sβ _ _ _) (∼$ (Kβ _ _) ∼refl)
+
+      redffs : (gffs $ w2) ∼ x0
+      redffs =
+        ∼trans (comp$ P₂ (S $ (K $ P₁) $ P₁) w2)
+          (∼trans (∼$ ∼refl (comp$ P₁ P₁ w2))
+            (∼trans (∼$ ∼refl (∼$ ∼refl (P₁β w1 x2)))
+              (∼trans (∼$ ∼refl (P₁β w0 x1)) (P₂β T x0))))
+
+      redfs : (gfs $ w2) ∼ x1
+      redfs = ∼trans (comp$ P₂ P₁ w2)
+                (∼trans (∼$ ∼refl (P₁β w1 x2)) (P₂β w0 x1))
+
+      -- Both operands are "apply the projection to `x2`": same reduction twice.
+      redU : (gU $ w2) ∼ (x0 $ x2)
+      redU =
+        ∼trans (comp$ gapp (S $ (S $ (K $ P) $ gffs) $ P₂) w2)
+          (∼trans (∼$ ∼refl (pair$ gffs P₂ w2))
+            (∼trans (∼$ ∼refl (∼$ (∼$ ∼refl redffs) (P₂β w1 x2)))
+              (∼trans (app$ (P $ x0 $ x2)) (∼$ (P₁β x0 x2) (P₂β x0 x2)))))
+
+      redV : (gV $ w2) ∼ (x1 $ x2)
+      redV =
+        ∼trans (comp$ gapp (S $ (S $ (K $ P) $ gfs) $ P₂) w2)
+          (∼trans (∼$ ∼refl (pair$ gfs P₂ w2))
+            (∼trans (∼$ ∼refl (∼$ (∼$ ∼refl redfs) (P₂β w1 x2)))
+              (∼trans (app$ (P $ x1 $ x2)) (∼$ (P₁β x1 x2) (P₂β x1 x2)))))
+
+      redz : (S $ (K $ tw2) $ (P $ T) $ x0 $ x1 $ x2) ∼ ((x0 $ x2) $ (x1 $ x2))
+      redz =
+        ∼trans (∼$ (∼$ (comp$ tw2 (P $ T) x0) ∼refl) ∼refl)
+          (∼trans (∼$ (∼$ (abs$ tw1 w0) ∼refl) ∼refl)
+            (∼trans (∼$ (comp$ tw1 (P $ w0) x1) ∼refl)
+              (∼trans (∼$ (abs$ gBODY w1) ∼refl)
+                (∼trans (comp$ gBODY (P $ w1) x2)
+                  (∼trans (comp$ gapp (S $ (S $ (K $ P) $ gU) $ gV) w2)
+                    (∼trans (∼$ ∼refl (pair$ gU gV w2))
+                      (∼trans (∼$ ∼refl (∼$ (∼$ ∼refl redU) redV))
+                        (∼trans (app$ (P $ (x0 $ x2) $ (x1 $ x2)))
+                                (∼$ (P₁β _ _) (P₂β _ _))))))))))
 
   GF (t $ u) = ∼trans (evApp (F t) (F u)) (∼$ (GF t) (GF u))
 
@@ -695,9 +1008,159 @@ module _ {n : ℕ} where
   -- (or two for `abs`, whose result is an arrow) plus `sβ`/`kβ`/`pβ` reduce it,
   -- and the induction hypotheses `FG f`/`FG g` replace the sub-names.  Same shape
   -- as `app`/`term` above but longer; left open.
-  FG (f · g) = {!!}
-  FG (pair f g) = {!!}
-  FG (abs f) = {!!}
+  -- G (f · g) = S (K (G g)) (G f).  One funext; `sβ`/`kβ` collapse the tower to
+  -- `ap (fst · F (G g)) (ap (fst · F (G f)) snd)`, the induction hypotheses turn
+  -- the two names into `abs (snd · f)` / `abs (snd · g)`, and `aβ`/`beta` peel
+  -- them off, leaving `snd · f · g`.
+  FG (f · g) = funext (∼trans redL (∼sym (aβ (snd · (f · g)))))
+    where
+      redL : ap (fst · F (G (f · g))) snd ∼ (snd · (f · g))
+      redL = begin∼
+        ap (fst · ap (ap (F S) (ap (F K) (F (G g)))) (F (G f))) snd
+          ∼⟨ ∼· (∼pair (ap· fst (ap (F S) (ap (F K) (F (G g)))) (F (G f))) ∼refl) ∼refl ⟩
+        ap (ap (fst · ap (F S) (ap (F K) (F (G g)))) (fst · F (G f))) snd
+          ∼⟨ ∼· (∼pair (∼· (∼pair (ap· fst (F S) (ap (F K) (F (G g)))) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+        ap (ap (ap (fst · F S) (fst · ap (F K) (F (G g)))) (fst · F (G f))) snd
+          ∼⟨ ∼· (∼pair (∼· (∼pair (∼· (∼pair ∼refl (ap· fst (F K) (F (G g)))) ∼refl) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+        ap (ap (ap (fst · F S) (ap (fst · F K) (fst · F (G g)))) (fst · F (G f))) snd
+          ∼⟨ sβ fst (ap (fst · F K) (fst · F (G g))) (fst · F (G f)) snd ⟩
+        ap (ap (ap (fst · F K) (fst · F (G g))) snd) (ap (fst · F (G f)) snd)
+          ∼⟨ ∼· (∼pair (kβ fst (fst · F (G g)) snd) ∼refl) ∼refl ⟩
+        ap (fst · F (G g)) (ap (fst · F (G f)) snd)
+          ∼⟨ ∼· (∼pair (∼· ∼refl (FG g)) (∼· (∼pair (∼· ∼refl (FG f)) ∼refl) ∼refl)) ∼refl ⟩
+        ap (fst · abs (snd · g)) (ap (fst · abs (snd · f)) snd)
+          ∼⟨ ∼· (∼pair ∼refl (aβ (snd · f))) ∼refl ⟩
+        ap (fst · abs (snd · g)) (snd · f)
+          ∼⟨ beta (snd · g) fst (snd · f) ⟩
+        pair fst (snd · f) · (snd · g)
+          ∼⟨ ∼sym (assoc _ _ _) ⟩
+        pair fst (snd · f) · snd · g
+          ∼⟨ ∼· (psnd fst (snd · f)) ∼refl ⟩
+        snd · f · g
+          ∼⟨ assoc snd f g ⟩
+        snd · (f · g) ∎∼
+
+  -- G (pair f g) = S (S (K P) (G f)) (G g): two nested S-towers over `F P`, so
+  -- two `sβ`s and a `kβ` expose `pβ`, which rebuilds an actual `pair`.
+  FG (pair f g) =
+    funext (∼trans redL (∼sym (∼trans (aβ (snd · pair f g)) (pairComp snd f g))))
+    where
+      -- The inner tower `S (K P) (G f)`, with `fst` already pushed in.
+      redQ : ap (ap (ap (fst · F S) (ap (fst · F K) (fst · F P))) (fst · F (G f))) snd
+             ∼ ap (fst · F P) (ap (fst · F (G f)) snd)
+      redQ = begin∼
+        ap (ap (ap (fst · F S) (ap (fst · F K) (fst · F P))) (fst · F (G f))) snd
+          ∼⟨ sβ fst (ap (fst · F K) (fst · F P)) (fst · F (G f)) snd ⟩
+        ap (ap (ap (fst · F K) (fst · F P)) snd) (ap (fst · F (G f)) snd)
+          ∼⟨ ∼· (∼pair (kβ fst (fst · F P) snd) ∼refl) ∼refl ⟩
+        ap (fst · F P) (ap (fst · F (G f)) snd) ∎∼
+
+      redL : ap (fst · F (G (pair f g))) snd ∼ pair (snd · f) (snd · g)
+      redL = begin∼
+        ap (fst · ap (ap (F S) (ap (ap (F S) (ap (F K) (F P))) (F (G f)))) (F (G g))) snd
+          ∼⟨ ∼· (∼pair (ap· fst (ap (F S) (ap (ap (F S) (ap (F K) (F P))) (F (G f)))) (F (G g))) ∼refl) ∼refl ⟩
+        ap (ap (fst · ap (F S) (ap (ap (F S) (ap (F K) (F P))) (F (G f)))) (fst · F (G g))) snd
+          ∼⟨ ∼· (∼pair (∼· (∼pair (ap· fst (F S) (ap (ap (F S) (ap (F K) (F P))) (F (G f)))) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+        ap (ap (ap (fst · F S) (fst · ap (ap (F S) (ap (F K) (F P))) (F (G f)))) (fst · F (G g))) snd
+          ∼⟨ ∼· (∼pair (∼· (∼pair (∼· (∼pair ∼refl (ap· fst (ap (F S) (ap (F K) (F P))) (F (G f)))) ∼refl) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+        ap (ap (ap (fst · F S) (ap (fst · ap (F S) (ap (F K) (F P))) (fst · F (G f)))) (fst · F (G g))) snd
+          ∼⟨ ∼· (∼pair (∼· (∼pair (∼· (∼pair ∼refl (∼· (∼pair (ap· fst (F S) (ap (F K) (F P))) ∼refl) ∼refl)) ∼refl) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+        ap (ap (ap (fst · F S) (ap (ap (fst · F S) (fst · ap (F K) (F P))) (fst · F (G f)))) (fst · F (G g))) snd
+          ∼⟨ ∼· (∼pair (∼· (∼pair (∼· (∼pair ∼refl (∼· (∼pair (∼· (∼pair ∼refl (ap· fst (F K) (F P))) ∼refl) ∼refl) ∼refl)) ∼refl) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+        ap (ap (ap (fst · F S) (ap (ap (fst · F S) (ap (fst · F K) (fst · F P))) (fst · F (G f)))) (fst · F (G g))) snd
+          ∼⟨ sβ fst (ap (ap (fst · F S) (ap (fst · F K) (fst · F P))) (fst · F (G f))) (fst · F (G g)) snd ⟩
+        ap (ap (ap (ap (fst · F S) (ap (fst · F K) (fst · F P))) (fst · F (G f))) snd) (ap (fst · F (G g)) snd)
+          ∼⟨ ∼· (∼pair redQ ∼refl) ∼refl ⟩
+        ap (ap (fst · F P) (ap (fst · F (G f)) snd)) (ap (fst · F (G g)) snd)
+          ∼⟨ pβ fst (ap (fst · F (G f)) snd) (ap (fst · F (G g)) snd) ⟩
+        pair (ap (fst · F (G f)) snd) (ap (fst · F (G g)) snd)
+          ∼⟨ ∼pair (∼· (∼pair (∼· ∼refl (FG f)) ∼refl) ∼refl) (∼· (∼pair (∼· ∼refl (FG g)) ∼refl) ∼refl) ⟩
+        pair (ap (fst · abs (snd · f)) snd) (ap (fst · abs (snd · g)) snd)
+          ∼⟨ ∼pair (aβ (snd · f)) (aβ (snd · g)) ⟩
+        pair (snd · f) (snd · g) ∎∼
+
+  -- G (abs f) = S (K (S (K (G f)))) P.  The result is an arrow into an arrow, so
+  -- two funexts: the first (over 𝟙 × A) peels the outer S/K layer down to `M1`,
+  -- the second (over (𝟙 × A) × B) pushes the new projections into a single
+  -- environment `e₂ = fst · fst` and lets `sβ`/`kβ`/`pβ` rebuild the pair
+  -- `pair u snd` that `f` is applied to.  Both sides land on `pair u snd · f`.
+  FG (abs {A = A} {B = B} {C = C} f) = funext (funext (∼trans redL (∼sym redR)))
+    where
+      -- The environment and the generic first argument, over Θ = (𝟙 × A) × B.
+      e₂ : Tm ε ((𝟙 × A) × B , 𝟙)
+      e₂ = fst · fst
+
+      u : Tm ε ((𝟙 × A) × B , A)
+      u = fst · snd
+
+      -- `F (S $ (K $ G f))`, the inner S/K layer.
+      FZ : Tm ε (𝟙 , (B ⇒ A × B) ⇒ B ⇒ C)
+      FZ = ap (F S) (ap (F K) (F (G f)))
+
+      -- What the first funext reduces the left-hand side to.
+      M1 : Tm ε (𝟙 × A , B ⇒ C)
+      M1 = ap (fst · FZ) (ap (fst · F P) snd)
+
+      red1 : ap (fst · F (G (abs f))) snd ∼ M1
+      red1 = begin∼
+        ap (fst · ap (ap (F S) (ap (F K) FZ)) (F P)) snd
+          ∼⟨ ∼· (∼pair (ap· fst (ap (F S) (ap (F K) FZ)) (F P)) ∼refl) ∼refl ⟩
+        ap (ap (fst · ap (F S) (ap (F K) FZ)) (fst · F P)) snd
+          ∼⟨ ∼· (∼pair (∼· (∼pair (ap· fst (F S) (ap (F K) FZ)) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+        ap (ap (ap (fst · F S) (fst · ap (F K) FZ)) (fst · F P)) snd
+          ∼⟨ ∼· (∼pair (∼· (∼pair (∼· (∼pair ∼refl (ap· fst (F K) FZ)) ∼refl) ∼refl) ∼refl) ∼refl) ∼refl ⟩
+        ap (ap (ap (fst · F S) (ap (fst · F K) (fst · FZ))) (fst · F P)) snd
+          ∼⟨ sβ fst (ap (fst · F K) (fst · FZ)) (fst · F P) snd ⟩
+        ap (ap (ap (fst · F K) (fst · FZ)) snd) (ap (fst · F P) snd)
+          ∼⟨ ∼· (∼pair (kβ fst (fst · FZ) snd) ∼refl) ∼refl ⟩
+        ap (fst · FZ) (ap (fst · F P) snd) ∎∼
+
+      -- The second funext's projections merge into the single environment `e₂`.
+      red2 : (fst · M1) ∼ ap (e₂ · FZ) (ap (e₂ · F P) u)
+      red2 = begin∼
+        fst · ap (fst · FZ) (ap (fst · F P) snd)
+          ∼⟨ ap· fst (fst · FZ) (ap (fst · F P) snd) ⟩
+        ap (fst · (fst · FZ)) (fst · ap (fst · F P) snd)
+          ∼⟨ ∼· (∼pair (∼sym (assoc fst fst FZ)) (ap· fst (fst · F P) snd)) ∼refl ⟩
+        ap (e₂ · FZ) (ap (fst · (fst · F P)) (fst · snd))
+          ∼⟨ ∼· (∼pair ∼refl (∼· (∼pair (∼sym (assoc fst fst (F P))) ∼refl) ∼refl)) ∼refl ⟩
+        ap (e₂ · FZ) (ap (e₂ · F P) u) ∎∼
+
+      redFZ : (e₂ · FZ) ∼ ap (e₂ · F S) (ap (e₂ · F K) (e₂ · F (G f)))
+      redFZ = ∼trans (ap· e₂ (F S) (ap (F K) (F (G f))))
+                     (∼· (∼pair ∼refl (ap· e₂ (F K) (F (G f)))) ∼refl)
+
+      redL : ap (fst · ap (fst · F (G (abs f))) snd) snd ∼ (pair u snd · f)
+      redL = begin∼
+        ap (fst · ap (fst · F (G (abs f))) snd) snd
+          ∼⟨ ∼· (∼pair (∼· ∼refl red1) ∼refl) ∼refl ⟩
+        ap (fst · M1) snd
+          ∼⟨ ∼· (∼pair red2 ∼refl) ∼refl ⟩
+        ap (ap (e₂ · FZ) (ap (e₂ · F P) u)) snd
+          ∼⟨ ∼· (∼pair (∼· (∼pair redFZ ∼refl) ∼refl) ∼refl) ∼refl ⟩
+        ap (ap (ap (e₂ · F S) (ap (e₂ · F K) (e₂ · F (G f)))) (ap (e₂ · F P) u)) snd
+          ∼⟨ sβ e₂ (ap (e₂ · F K) (e₂ · F (G f))) (ap (e₂ · F P) u) snd ⟩
+        ap (ap (ap (e₂ · F K) (e₂ · F (G f))) snd) (ap (ap (e₂ · F P) u) snd)
+          ∼⟨ ∼· (∼pair (kβ e₂ (e₂ · F (G f)) snd) (pβ e₂ u snd)) ∼refl ⟩
+        ap (e₂ · F (G f)) (pair u snd)
+          ∼⟨ ∼· (∼pair (∼· ∼refl (FG f)) ∼refl) ∼refl ⟩
+        ap (e₂ · abs (snd · f)) (pair u snd)
+          ∼⟨ beta (snd · f) e₂ (pair u snd) ⟩
+        pair e₂ (pair u snd) · (snd · f)
+          ∼⟨ ∼sym (assoc _ _ _) ⟩
+        pair e₂ (pair u snd) · snd · f
+          ∼⟨ ∼· (psnd e₂ (pair u snd)) ∼refl ⟩
+        pair u snd · f ∎∼
+
+      redR : ap (fst · ap (fst · abs (snd · abs f)) snd) snd ∼ (pair u snd · f)
+      redR = begin∼
+        ap (fst · ap (fst · abs (snd · abs f)) snd) snd
+          ∼⟨ ∼· (∼pair (∼· ∼refl (aβ (snd · abs f))) ∼refl) ∼refl ⟩
+        ap (fst · (snd · abs f)) snd
+          ∼⟨ ∼· (∼pair (∼sym (assoc fst snd (abs f))) ∼refl) ∼refl ⟩
+        ap (u · abs f) snd
+          ∼⟨ beta f u snd ⟩
+        pair u snd · f ∎∼
 
   -- G app = S P₁ P₂; one funext, then the S/P₁/P₂ laws, and `snd` is its own
   -- pairing (pext).
