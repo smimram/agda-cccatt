@@ -1,0 +1,6 @@
+name: cccatt
+include: .
+depend: standard-library
+flags:
+  --allow-unsolved-metas
+  --rewriting
