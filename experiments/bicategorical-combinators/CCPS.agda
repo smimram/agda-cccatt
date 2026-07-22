@@ -17,7 +17,7 @@ PSTgtTm : {n : ℕ} {Γ : Con n} {x : Fin n} {B : Ty n} → PStgt Γ x B → Tm 
 -- Δ is a prefix of the ambient context Γ, whence the inclusion of variables
 PSTgtConTm : {n : ℕ} {Γ Δ : Con n} {x : Fin n} → PStgtCon Γ x Δ → ({A : Arr n} → A ∈ Δ → A ∈ Γ) → Tm Γ (𝟙 , X x)
 
-PSTmTm (ps-pair p q) = pair (PSTmTm p) (PSTmTm q)
+PSTmTm (ps-pa p q) = pa (PSTmTm p) (PSTmTm q)
 PSTmTm ps-term = term
 PSTmTm (ps-abs p) = abs (close (PSTmTm p))
 PSTmTm (ps-neu p) = PSTgtConTm p (λ i → i)
@@ -25,7 +25,7 @@ PSTmTm (ps-neu p) = PSTgtConTm p (λ i → i)
 PSTgtTm tgt-X t = t
 PSTgtTm (tgt-l p _) t = PSTgtTm p (t · fst)
 PSTgtTm (tgt-r _ p) t = PSTgtTm p (t · snd)
-PSTgtTm (tgt-↝ a p) t = PSTgtTm p (pair t (PSTmTm a) · app)
+PSTgtTm (tgt-↝ a p) t = PSTgtTm p (pa t (PSTmTm a) · app)
 
 PSTgtConTm (tgt-here _ a p) incl = PSTgtTm p (PSTmTm a · var (incl here))
 PSTgtConTm (tgt-drop p _) incl = PSTgtConTm p (λ i → incl (drop i))
@@ -35,7 +35,7 @@ PSTmCan : {n : ℕ} {Γ : Con n} {A : Ty n} (p : PS Γ A) → canonical (PSTmTm 
 PSTgtNeu : {n : ℕ} {Γ : Con n} {x : Fin n} {B : Ty n} (p : PStgt Γ x B) {t : Tm Γ (𝟙 , B)} → neutral t → neutral (PSTgtTm p t)
 PSTgtConNeu : {n : ℕ} {Γ Δ : Con n} {x : Fin n} (p : PStgtCon Γ x Δ) (incl : {A : Arr n} → A ∈ Δ → A ∈ Γ) → neutral (PSTgtConTm p incl)
 
-PSTmCan (ps-pair p q) = can-pair (PSTmCan p) (PSTmCan q)
+PSTmCan (ps-pa p q) = can-pa (PSTmCan p) (PSTmCan q)
 PSTmCan ps-term = can-term
 PSTmCan (ps-abs p) = can-abs (PSTmCan p)
 PSTmCan (ps-neu p) = can-neu (PSTgtConNeu p (λ i → i))
@@ -57,8 +57,8 @@ PSTm p = uncurry (PSTmTm p)
 
 --- Uniqueness of the canonical term of a pasting scheme
 
-≡→∼ : {n : ℕ} {Γ : Con n} {A : Arr n} {t u : Tm Γ A} → t ≡ u → t ∼ u
-≡→∼ refl = ∼refl
+≡→⇒ : {n : ℕ} {Γ : Con n} {A : Arr n} {t u : Tm Γ A} → t ≡ u → t ⇒ u
+≡→⇒ refl = ⇒refl
 
 -- The spine of eliminations of a neutral term, in the same order as PStgt (the
 -- head of the spine is the elimination applied first), but with the PS
@@ -76,7 +76,7 @@ RTm : {n : ℕ} {Γ : Con n} {x : Fin n} {B : Ty n} → RTgt Γ x B → Tm Γ (�
 RTm rtgt-X t = t
 RTm (rtgt-l k) t = RTm k (t · fst)
 RTm (rtgt-r k) t = RTm k (t · snd)
-RTm (rtgt-↝ u _ k) t = RTm k (pair t u · app)
+RTm (rtgt-↝ u _ k) t = RTm k (pa t u · app)
 
 -- A variable which is not a target cannot be reached by a spine: this is what
 -- turns the "exactly one producer" conditions of PS into the determinism of the
@@ -104,7 +104,7 @@ TgtConUniq : {n : ℕ} {Γ Δ : Con n} {x : Fin n} {A B : Ty n} (p : PStgtCon Γ
 -- expected one
 TgtUniq : {n : ℕ} {Γ : Con n} {x : Fin n} {B : Ty n} (q : PStgt Γ x B) (k : RTgt Γ x B) (t : Tm Γ (𝟙 , B)) → RTm k t ≡ PSTgtTm q t
 
-CanUniq (ps-pair p q) (can-pair ct cu) = cong₂ pair (CanUniq p ct) (CanUniq q cu)
+CanUniq (ps-pa p q) (can-pa ct cu) = cong₂ pa (CanUniq p ct) (CanUniq q cu)
 CanUniq ps-term can-term = refl
 CanUniq (ps-abs p) (can-abs ct) = cong (λ t → abs (close t)) (CanUniq p ct)
 CanUniq (ps-neu p) (can-neu nt) = NeuUniq p rtgt-X nt
@@ -124,27 +124,27 @@ TgtUniq (tgt-l q _) (rtgt-l k) t = TgtUniq q k (t · fst)
 TgtUniq (tgt-l _ n) (rtgt-r k) t = ⊥-elim (noTgt-RTgt n k)
 TgtUniq (tgt-r n _) (rtgt-l k) t = ⊥-elim (noTgt-RTgt n k)
 TgtUniq (tgt-r _ q) (rtgt-r k) t = TgtUniq q k (t · snd)
-TgtUniq (tgt-↝ a q) (rtgt-↝ u cu k) t = TgtUniq q k _ ∙ cong (λ v → PSTgtTm q (pair t v · app)) (CanUniq a cu)
+TgtUniq (tgt-↝ a q) (rtgt-↝ u cu k) t = TgtUniq q k _ ∙ cong (λ v → PSTgtTm q (pa t v · app)) (CanUniq a cu)
 
-PSCanEq' : {n : ℕ} {Γ : Con n} {A : Ty n} (ps : PS Γ A) {t u : Tm Γ (𝟙 , A)} → canonical t → canonical u → t ∼ u
-PSCanEq' ps ct cu = ≡→∼ (CanUniq ps ct ∙ sym (CanUniq ps cu))
+PSCanEq' : {n : ℕ} {Γ : Con n} {A : Ty n} (ps : PS Γ A) {t u : Tm Γ (𝟙 , A)} → canonical t → canonical u → t ⇒ u
+PSCanEq' ps ct cu = ≡→⇒ (CanUniq ps ct ∙ sym (CanUniq ps cu))
 
 -- Any two terms of a pasting scheme are equivalent: normalizing them (this is
 -- where NF is used) brings us back to the canonical case above
-PSEq' : {n : ℕ} {Γ : Con n} {A : Ty n} (ps : PS Γ A) (t u : Tm Γ (𝟙 , A)) → t ∼ u
-PSEq' ps t u = ∼trans (nf∼ t) (∼trans (PSCanEq' ps (nfCan t) (nfCan u)) (∼sym (nf∼ u)))
+PSEq' : {n : ℕ} {Γ : Con n} {A : Ty n} (ps : PS Γ A) (t u : Tm Γ (𝟙 , A)) → t ⇒ u
+PSEq' ps t u = ⇒trans (nf⇒ t) (⇒trans (PSCanEq' ps (nfCan t) (nfCan u)) (⇒sym (nf⇒ u)))
 
-uncurryCurry : {n : ℕ} {Γ : Con n} {A B : Ty n} (t : Tm Γ (A , B)) → uncurry (curry t) ∼ t
+uncurryCurry : {n : ℕ} {Γ : Con n} {A B : Ty n} (t : Tm Γ (A , B)) → uncurry (curry t) ⇒ t
 uncurryCurry t =
-  ∼trans (absβ term id (snd · t))
-  (∼trans (∼sym (assoc (pair term id) snd t))
-  (∼trans (∼· (psnd term id) ∼refl) (unitl t)))
+  ⇒trans (absβ term id (snd · t))
+  (⇒trans (⇒sym (assoc (pa term id) snd t))
+  (⇒trans (⇒· (pa-snd term id) ⇒refl) (unitl t)))
 
 -- Two terms of a pasting scheme are equivalent, for an arbitrary source: the
 -- source is the domain of the pasted type, so that currying lands in the
 -- pasting scheme itself
-PSEq : {n : ℕ} {Γ : Con n} {A B : Ty n} (ps : PS Γ (A ↝ B)) (t u : Tm Γ (A , B)) → t ∼ u
+PSEq : {n : ℕ} {Γ : Con n} {A B : Ty n} (ps : PS Γ (A ↝ B)) (t u : Tm Γ (A , B)) → t ⇒ u
 PSEq ps t u =
-  ∼trans (∼sym (uncurryCurry t))
-  (∼trans (∼· (∼pair (∼· ∼refl (PSEq' ps (curry t) (curry u))) ∼refl) ∼refl)
+  ⇒trans (⇒sym (uncurryCurry t))
+  (⇒trans (⇒· (⇒pa (⇒· ⇒refl (PSEq' ps (curry t) (curry u))) ⇒refl) ⇒refl)
           (uncurryCurry u))
