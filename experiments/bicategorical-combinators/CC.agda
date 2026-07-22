@@ -15,8 +15,8 @@ data Tm {n : ℕ} (Γ : Con n) : Arr n → Type where
   pair : {X A B : Ty n} → Tm Γ (X , A) → Tm Γ (X , B) → Tm Γ (X , A × B)
   fst  : {A B : Ty n} → Tm Γ (A × B , A)
   snd  : {A B : Ty n} → Tm Γ (A × B , B)
-  abs  : {A B C : Ty n} → Tm Γ (A × B , C) → Tm Γ (A , B ⇒ C)
-  app  : {A B : Ty n} → Tm Γ ((A ⇒ B) × A , B)
+  abs  : {A B C : Ty n} → Tm Γ (A × B , C) → Tm Γ (A , B ↝ C)
+  app  : {A B : Ty n} → Tm Γ ((A ↝ B) × A , B)
 
 infix 5 _∼_
 
@@ -26,7 +26,7 @@ data _∼_ {n : ℕ} {Γ : Con n} : {A : Arr n} → Tm Γ A → Tm Γ A → Type
   pext : {A B C : Ty n} (f : Tm Γ (A , B × C)) → f ∼ pair (f · fst) (f · snd)
   text : {A : Ty n} (f : Tm Γ (A , 𝟙)) → f ∼ term
   aβ : {A B C : Ty n} (f : Tm Γ (A × B , C)) → pair (fst · abs f) snd · app ∼ f
-  aext : {A B C : Ty n} (f : Tm Γ (A , B ⇒ C)) → f ∼ abs (pair (fst · f) snd · app)
+  aext : {A B C : Ty n} (f : Tm Γ (A , B ↝ C)) → f ∼ abs (pair (fst · f) snd · app)
   unitl : {A B : Ty n} (f : Tm Γ (A , B)) → id · f ∼ f
   unitr : {A B : Ty n} (f : Tm Γ (A , B)) → f · id ∼ f
   assoc : {A B C D : Ty n} (f : Tm Γ (A , B)) (g : Tm Γ (B , C)) (h : Tm Γ (C , D)) → (f · g) · h ∼ f · (g · h)
@@ -127,11 +127,11 @@ _∘_ {Γ'' = Γ'' ▹ A} (σ' , t') σ = (σ' ∘ σ) , (t' [ σ ])
 
 -- Currying against the terminal source, which brings a term with source A back
 -- to a term with source 𝟙
-curry : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A , B) → Tm Γ (𝟙 , A ⇒ B)
+curry : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (A , B) → Tm Γ (𝟙 , A ↝ B)
 curry t = abs (snd · t)
 
 -- ... and its inverse
-uncurry : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (𝟙 , A ⇒ B) → Tm Γ (A , B)
+uncurry : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (𝟙 , A ↝ B) → Tm Γ (A , B)
 uncurry t = pair (term · t) id · app
 
 ---
@@ -161,11 +161,11 @@ data neutral {n : ℕ} : {Γ : Con n} {A : Ty n} (t : Tm Γ (𝟙 , A)) → Type
 data canonical {n} where
   can-pair : {Γ : Con n} {A B : Ty n} {tl : Tm Γ (𝟙 , A)} {tr : Tm Γ (𝟙 , B)} → canonical tl → canonical tr → canonical {A = A × B} (pair tl tr)
   can-term : {Γ : Con n} → canonical {Γ = Γ} {A = 𝟙} term
-  can-abs : {Γ : Con n} {A B : Ty n} {t : Tm (Γ ▹ (𝟙 , A)) (𝟙 , B)} → canonical t → canonical {A = A ⇒ B} (abs (close t))
+  can-abs : {Γ : Con n} {A B : Ty n} {t : Tm (Γ ▹ (𝟙 , A)) (𝟙 , B)} → canonical t → canonical {A = A ↝ B} (abs (close t))
   can-neu : {Γ : Con n} {x : Fin n} {t : Tm Γ (𝟙 , X x)} → neutral t → canonical {A = X x} t
 
 data neutral {n} where
   neu-var : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A)} → canonical t → (x : (A , B) ∈ Γ) → neutral (t · var x)
-  neu-app : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A ⇒ B)} {u : Tm Γ (𝟙 , A)} → neutral t → canonical u → neutral (pair t u · app)
+  neu-app : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A ↝ B)} {u : Tm Γ (𝟙 , A)} → neutral t → canonical u → neutral (pair t u · app)
   neu-fst : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A × B)} → neutral t → neutral (t · fst)
   neu-snd : {Γ : Con n} {A B : Ty n} {t : Tm Γ (𝟙 , A × B)} → neutral t → neutral (t · snd)

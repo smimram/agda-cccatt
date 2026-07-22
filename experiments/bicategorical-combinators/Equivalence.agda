@@ -118,17 +118,17 @@ Fcoh∼ ps σ t = CCPS.PSEq ps (CCPS.PSTm ps) t CC.[ CC.∼SubRefl σ ]∼
 
 FG : {n : ℕ} {Γ : Con n} {A : Arr n} (t : CC.Tm Γ A) → F (G t) CC.∼ t
 FG (CC.var x) = CC.∼refl
-FG CC.id = Fcoh∼ PS⊢X⇒X {τ = SubTy1 _} tt CC.id
+FG CC.id = Fcoh∼ PS⊢X↝X {τ = SubTy1 _} tt CC.id
 FG (f CC.· g) = CC.∼trans
-  (Fcoh∼ PSX⇒Y,Y⇒Z⊢X⇒Z {τ = SubTy3 _ _ _} _ (CC.var (drop here) CC.· CC.var here))
+  (Fcoh∼ PSX↝Y,Y↝Z⊢X↝Z {τ = SubTy3 _ _ _} _ (CC.var (drop here) CC.· CC.var here))
   (CC.∼· (FG f) (FG g))
-FG CC.term = Fcoh∼ PS⊢X⇒𝟙 {τ = SubTy1 _} tt CC.term
+FG CC.term = Fcoh∼ PS⊢X↝𝟙 {τ = SubTy1 _} tt CC.term
 FG (CC.pair f g) = CC.∼trans
-  (Fcoh∼ PSX⇒Y,X⇒Z⊢X⇒Y×Z {τ = SubTy3 _ _ _} _ (CC.pair (CC.var (drop here)) (CC.var here)))
+  (Fcoh∼ PSX↝Y,X↝Z⊢X↝Y×Z {τ = SubTy3 _ _ _} _ (CC.pair (CC.var (drop here)) (CC.var here)))
   (CC.∼pair (FG f) (FG g))
-FG CC.fst = Fcoh∼ PS⊢X×Y⇒X {τ = SubTy2 _ _} tt CC.fst
-FG CC.snd = Fcoh∼ PS⊢X×Y⇒Y {τ = SubTy2 _ _} tt CC.snd
+FG CC.fst = Fcoh∼ PS⊢X×Y↝X {τ = SubTy2 _ _} tt CC.fst
+FG CC.snd = Fcoh∼ PS⊢X×Y↝Y {τ = SubTy2 _ _} tt CC.snd
 FG (CC.abs f) = CC.∼trans
-  (Fcoh∼ PSX×Y⇒Z⊢X⇒Y⇒Z {τ = SubTy3 _ _ _} _ (CC.abs (CC.var here)))
+  (Fcoh∼ PSX×Y↝Z⊢X↝Y↝Z {τ = SubTy3 _ _ _} _ (CC.abs (CC.var here)))
   (CC.∼abs (FG f))
-FG CC.app = Fcoh∼ PS⊢[X⇒Y]×X⇒Y {τ = SubTy2 _ _} tt CC.app
+FG CC.app = Fcoh∼ PS⊢[X↝Y]×X↝Y {τ = SubTy2 _ _} tt CC.app

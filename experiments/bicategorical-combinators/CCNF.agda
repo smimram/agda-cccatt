@@ -89,13 +89,13 @@ Nf Γ A = Σ (Tm Γ (𝟙 , A)) canonical
 ⟦ X x ⟧ Γ = Ne Γ (X x)
 ⟦ 𝟙 ⟧ Γ = Unit
 ⟦ A × B ⟧ Γ = ⟦ A ⟧ Γ ∧ ⟦ B ⟧ Γ
-⟦ A ⇒ B ⟧ Γ = {Δ : Con _} → Ren Γ Δ → ⟦ A ⟧ Δ → ⟦ B ⟧ Δ
+⟦ A ↝ B ⟧ Γ = {Δ : Con _} → Ren Γ Δ → ⟦ A ⟧ Δ → ⟦ B ⟧ Δ
 
 ⟦⟧wk : {n : ℕ} {Γ Δ : Con n} (A : Ty n) → Ren Γ Δ → ⟦ A ⟧ Γ → ⟦ A ⟧ Δ
 ⟦⟧wk (X x) ρ (t , nt) = ren ρ t , renNeu ρ nt
 ⟦⟧wk 𝟙 ρ a = tt
 ⟦⟧wk (A × B) ρ (a , b) = ⟦⟧wk A ρ a , ⟦⟧wk B ρ b
-⟦⟧wk (A ⇒ B) ρ f = λ ρ' a → f (ρ' ∘R ρ) a
+⟦⟧wk (A ↝ B) ρ f = λ ρ' a → f (ρ' ∘R ρ) a
 
 --- Reflection and reification, by induction on the type
 
@@ -105,7 +105,7 @@ reify : {n : ℕ} {Γ : Con n} (A : Ty n) → ⟦ A ⟧ Γ → Nf Γ A
 reflect (X x) t = t
 reflect 𝟙 t = tt
 reflect (A × B) (t , nt) = reflect A (t · fst , neu-fst nt) , reflect B (t · snd , neu-snd nt)
-reflect (A ⇒ B) (t , nt) = λ ρ a →
+reflect (A ↝ B) (t , nt) = λ ρ a →
   let (u , cu) = reify A a in
   reflect B (pair (ren ρ t) u · app , neu-app (renNeu ρ nt) cu)
 
@@ -117,7 +117,7 @@ reify (A × B) (a , b) =
   pair t u , can-pair ct cu
 -- The fresh variable of the extended context is used as the neutral term · var
 -- here, and close turns the body back into a morphism 𝟙 × A → B
-reify (A ⇒ B) f =
+reify (A ↝ B) f =
   let (t , ct) = reify B (f wkRen (reflect A (term · var here , neu-var can-term here))) in
   abs (close t) , can-abs ct
 
@@ -252,7 +252,7 @@ swapSwap = ∼trans (pairComp swp (pair (fst · fst) snd) (fst · snd))
 
 -- The common shape of the aβ and aext cases: close (pair (fst · e) snd · app),
 -- where h is close e
-closeApp : {n : ℕ} {Γ : Con n} {A B C D : Ty n} (h : Tm Γ (A × D , B ⇒ C)) →
+closeApp : {n : ℕ} {Γ : Con n} {A B C D : Ty n} (h : Tm Γ (A × D , B ↝ C)) →
            pair (pair (pair (fst · fst) snd · h) (fst · snd)) snd · (fst · app) ∼ swp · (pair (fst · h) snd · app)
 closeApp h = ∼trans (∼sym (assoc (pair (pair (pair (fst · fst) snd · h) (fst · snd)) snd) fst app))
   (∼trans (∼· (pfst (pair (pair (fst · fst) snd · h) (fst · snd)) snd) ∼refl)
@@ -311,17 +311,17 @@ closeRen (abs t) =
 closeRen app = ∼refl
 
 -- Applying a function to the freshly bound variable: the inverse of close
-opn : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (𝟙 , A ⇒ B) → Tm (Γ ▹ (𝟙 , A)) (𝟙 , B)
+opn : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ (𝟙 , A ↝ B) → Tm (Γ ▹ (𝟙 , A)) (𝟙 , B)
 opn t = pair (ren wkRen t) (term · var here) · app
 
-closeOpn : {n : ℕ} {Γ : Con n} {A B : Ty n} (t : Tm Γ (𝟙 , A ⇒ B)) → close (opn t) ∼ pair (fst · t) snd · app
+closeOpn : {n : ℕ} {Γ : Con n} {A B : Ty n} (t : Tm Γ (𝟙 , A ↝ B)) → close (opn t) ∼ pair (fst · t) snd · app
 closeOpn t =
   ∼trans (∼· (∼pair (∼pair (closeRen t) (psnd term snd)) ∼refl) ∼refl)
   (∼trans (∼sym (assoc (pair (pair (fst · t) snd) snd) fst app))
           (∼· (pfst (pair (fst · t) snd) snd) ∼refl))
 
 -- η in the form produced by reification
-closeOpn∼ : {n : ℕ} {Γ : Con n} {A B : Ty n} (t : Tm Γ (𝟙 , A ⇒ B)) → t ∼ abs (close (opn t))
+closeOpn∼ : {n : ℕ} {Γ : Con n} {A B : Ty n} (t : Tm Γ (𝟙 , A ↝ B)) → t ∼ abs (close (opn t))
 closeOpn∼ t = ∼trans (aext t) (∼abs (∼sym (closeOpn t)))
 
 --- The logical relation between terms and values
@@ -330,7 +330,7 @@ R : {n : ℕ} {Γ : Con n} (A : Ty n) → Tm Γ (𝟙 , A) → ⟦ A ⟧ Γ → 
 R (X x) t (u , _) = t ∼ u
 R 𝟙 t v = Unit
 R (A × B) t (a , b) = R A (t · fst) a ∧ R B (t · snd) b
-R {Γ = Γ} (A ⇒ B) t f =
+R {Γ = Γ} (A ↝ B) t f =
   {Δ : Con _} (ρ : Ren Γ Δ) {u : Tm Δ (𝟙 , A)} {a : ⟦ A ⟧ Δ} → R A u a → R B (pair (ren ρ t) u · app) (f ρ a)
 
 -- The relation only depends on the term up to equivalence
@@ -338,14 +338,14 @@ R∼ : {n : ℕ} {Γ : Con n} (A : Ty n) {t t' : Tm Γ (𝟙 , A)} {v : ⟦ A �
 R∼ (X x) p r = ∼trans (∼sym p) r
 R∼ 𝟙 p r = tt
 R∼ (A × B) p (r , s) = R∼ A (∼· p ∼refl) r , R∼ B (∼· p ∼refl) s
-R∼ (A ⇒ B) p r = λ ρ q → R∼ B (∼· (∼pair (ren∼ ρ p) ∼refl) ∼refl) (r ρ q)
+R∼ (A ↝ B) p r = λ ρ q → R∼ B (∼· (∼pair (ren∼ ρ p) ∼refl) ∼refl) (r ρ q)
 
 -- ... and is stable under renaming
 Rwk : {n : ℕ} {Γ Δ : Con n} (A : Ty n) (ρ : Ren Γ Δ) {t : Tm Γ (𝟙 , A)} {v : ⟦ A ⟧ Γ} → R A t v → R A (ren ρ t) (⟦⟧wk A ρ v)
 Rwk (X x) ρ r = ren∼ ρ r
 Rwk 𝟙 ρ r = tt
 Rwk (A × B) ρ (r , s) = Rwk A ρ r , Rwk B ρ s
-Rwk (A ⇒ B) ρ {t = t} r = λ ρ' {u} q →
+Rwk (A ↝ B) ρ {t = t} r = λ ρ' {u} q →
   subst (λ s → R B (pair s u · app) _) (sym (renComp ρ' ρ t)) (r (ρ' ∘R ρ) q)
 
 --- Reification is sound and reflection is complete
@@ -358,13 +358,13 @@ reifyR 𝟙 {t = t} r = text t
 reifyR (A × B) {t = t} (r , s) = ∼trans (pext t) (∼pair (reifyR A r) (reifyR B s))
 -- the body is reified in the extended context, then closed back: this is where
 -- close∼ is needed, to rewrite underneath the binder
-reifyR (A ⇒ B) {t = t} r = ∼trans (closeOpn∼ t)
+reifyR (A ↝ B) {t = t} r = ∼trans (closeOpn∼ t)
   (∼abs (close∼ (reifyR B (r wkRen (reflectR A {u = term · var here , neu-var can-term here} ∼refl)))))
 
 reflectR (X x) p = p
 reflectR 𝟙 p = tt
 reflectR (A × B) p = reflectR A (∼· p ∼refl) , reflectR B (∼· p ∼refl)
-reflectR (A ⇒ B) p = λ ρ q → reflectR B (∼· (∼pair (ren∼ ρ p) (reifyR _ q)) ∼refl)
+reflectR (A ↝ B) p = λ ρ q → reflectR B (∼· (∼pair (ren∼ ρ p) (reifyR _ q)) ∼refl)
 
 --- The fundamental lemma: evaluation preserves the logical relation
 
@@ -413,8 +413,8 @@ nf∼ {A = A} t = ∼trans (∼trans (∼sym (unitl t)) (∼· (text id) ∼refl
     -- x = term · var here
 
     -- -- The identity function, in η-long form
-    -- idf : Tm Γ₁ (𝟙 , X (# 0) ⇒ X (# 0))
-    -- idf = ren wkRen (PSTmTm PS⊢X⇒X')
+    -- idf : Tm Γ₁ (𝟙 , X (# 0) ↝ X (# 0))
+    -- idf = ren wkRen (PSTmTm PS⊢X↝X')
 
     -- -- β: applying the identity to x gives back x
     -- _ : nf (pair idf x · app) ≡ x
