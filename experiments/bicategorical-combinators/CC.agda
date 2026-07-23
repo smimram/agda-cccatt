@@ -37,6 +37,15 @@ data _⇒_ {n : ℕ} {Γ : Con n} : {A : Arr n} → Tm Γ A → Tm Γ A → Type
   ⇒sym  : {A : Arr n} {f g : Tm Γ A} → f ⇒ g → g ⇒ f
   ⇒trans : {A : Arr n} {f g h : Tm Γ A} → f ⇒ g → g ⇒ h → f ⇒ h
 
+term2 : {n : ℕ} {Γ : Con n} {A : Ty n} (f g : Tm Γ (A , 𝟙)) → f ⇒ g
+term2 f g = ⇒trans (term-can f) (⇒sym (term-can g))
+
+data _∼_ {n : ℕ} {Γ : Con n} : {A B : Ty n} {t u : Tm Γ (A , B)} (α β : t ⇒ u) → Type where
+  term-can2 : {A : Ty n} {f g : Tm Γ (A , 𝟙)} (α : f ⇒ g) → α ∼ term2 f g
+  ∼refl : {A : Arr n} {t u : Tm Γ A} (α : t ⇒ u) → α ∼ α
+  -- ∼sym : {A : Arr n} {t u : Tm Γ A} → t ∼ u → u ∼ t
+  -- ∼trans : {A : Arr n} {t u v : Tm Γ A} → t ∼ u → u ∼ v → t ∼ v
+
 -- Substitutions
 Sub : {n n' : ℕ} (τ : SubTy n n') (Γ : Con n) (Γ' : Con n') → Type
 Sub _ Γ ε = Unit

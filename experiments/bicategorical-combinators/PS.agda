@@ -1,7 +1,5 @@
 open import Prelude
-open import Relation.Nullary using (¬_)
 open import Ty
--- open import CC
 
 -- A variable does not occur as a target of a type
 data noTgt {n : ℕ} (x : Fin n) : Ty n → Type where
