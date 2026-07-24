@@ -117,14 +117,14 @@ app : {n : ℕ} {Γ : Con n} {A B : Ty n} → Tm Γ ((A ↝ B) × A , B)
 app = coh PS⊢[X↝Y]×X↝Y (SubTy2 _ _) tt
 
 ---
---- Relations
+--- 2-cells
 ---
 
 -- -- Applying coh with equal substitutions gives equal terms
 -- coh≡ : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A B : Ty n'} (ps : PSArr Γ' (A , B)) {τ τ' : SubTy n n'} (p : τ ≡ τ') → {σ : Sub τ Γ Γ'} {σ' : Sub τ' Γ Γ'} → subst (λ τ → Sub τ Γ Γ') p σ ≡ σ' → subst (λ τ → Tm Γ (A [ τ ]' , B [ τ ]')) p (coh ps τ σ) ≡ coh ps τ' σ'
 -- coh≡ ps refl refl = refl
 
-infix 5 _⇒_
+-- infix 5 _⇒_
 
 -- -- Rewriting of substitutions
 -- _⇒Sub_   : {n n' : ℕ} {τ : SubTy n n'} {Γ : Con n} {Γ' : Con n'} → Sub τ Γ Γ' → Sub τ Γ Γ' → Type
@@ -141,13 +141,20 @@ infix 5 _⇒_
 Arr₂ : {n : ℕ} (Γ : Con n) (A : Arr n) → Type
 Arr₂ Γ A = Tm Γ A ∧ Tm Γ A
 
+infixl 5 _▹₂_
+
 -- 2-contexts
 data Con₂ {n : ℕ} (Γ : Con n) : Set where
   ε₂   : Con₂ Γ
-  _▹₂_ : (Γ₂ : Con₂ Γ) {A : Arr n} → Arr₂ Γ A → Con₂ Γ
+  _▹₂_ : (Δ : Con₂ Γ) {A : Arr n} → Arr₂ Γ A → Con₂ Γ
+
+data _∈₂_ {n : ℕ} {Γ : Con n} {A : Arr n} (B : Arr₂ Γ A): Con₂ Γ → Set where
+  here : {Δ : Con₂ Γ} → B ∈₂ (Δ ▹₂ B)
+  drop : {Δ : Con₂ Γ} {C : Arr₂ Γ A} → B ∈₂ Δ → B ∈₂ (Δ ▹₂ C)
 
 -- 2-cells
-
+data Tm₂ {n : ℕ} {Γ : Con n} (Δ : Con₂ Γ) {A : Arr n} : Arr₂ Γ A → Set where
+  var₂ : {B : Arr₂ Γ A} → B ∈₂ Δ → Tm₂ Δ B
 
 -- -- simple variant of eq without ⇒ for substitution
 -- eqs : {n n' : ℕ} {Γ : Con n} {Γ' : Con n'} {A : Arr n'} (ps : PSArr Γ' A) (t u : Tm Γ' A) (τ : SubTy n n') (σ : Sub τ Γ Γ') → t [ σ ] ⇒ u [ σ ]
